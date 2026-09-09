@@ -4,6 +4,9 @@ from agents.data_forensics.agent import DataForensicsAgent
 from agents.drift_intelligence.agent import DriftIntelligenceAgent
 from agents.lot_intelligence.agent import LotIntelligenceAgent
 from agents.latent_defect.agent import LatentDefectAgent
+from agents.adversarial_qa.agent import AdversarialQAAgent
+from agents.reliability_judge.agent import ReliabilityJudgeAgent
+from agents.explanation.agent import ExplanationAgent
 
 from shared.schemas.workflow import WorkflowState, WorkflowStatus
 
@@ -14,6 +17,9 @@ class SentinelOrchestrator:
         self.lot_intelligence = LotIntelligenceAgent()
         self.drift_intelligence = DriftIntelligenceAgent()
         self.latent_defect = LatentDefectAgent()
+        self.adversarial_qa = AdversarialQAAgent()
+        self.reliability_judge = ReliabilityJudgeAgent()
+        self.explanation = ExplanationAgent()
 
     async def run(self, state: WorkflowState) -> WorkflowState:
         state.status = WorkflowStatus.RUNNING
@@ -60,5 +66,8 @@ class SentinelOrchestrator:
         )
 
         state = await self.latent_defect.run(state)
+        state = await self.adversarial_qa.run(state)
+        state = await self.reliability_judge.run(state)
+        state = await self.explanation.run(state)
 
         return state

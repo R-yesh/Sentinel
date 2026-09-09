@@ -3,6 +3,7 @@ import asyncio
 from agents.data_forensics.agent import DataForensicsAgent
 from agents.drift_intelligence.agent import DriftIntelligenceAgent
 from agents.lot_intelligence.agent import LotIntelligenceAgent
+from agents.latent_defect.agent import LatentDefectAgent
 
 from shared.schemas.workflow import WorkflowState, WorkflowStatus
 
@@ -12,6 +13,7 @@ class SentinelOrchestrator:
         self.data_forensics = DataForensicsAgent()
         self.lot_intelligence = LotIntelligenceAgent()
         self.drift_intelligence = DriftIntelligenceAgent()
+        self.latent_defect = LatentDefectAgent()
 
     async def run(self, state: WorkflowState) -> WorkflowState:
         state.status = WorkflowStatus.RUNNING
@@ -56,5 +58,7 @@ class SentinelOrchestrator:
         state.agent_outputs["drift_intelligence"] = (
             drift_result.agent_outputs["drift_intelligence"]
         )
+
+        state = await self.latent_defect.run(state)
 
         return state

@@ -10,11 +10,11 @@ class LatentDefectAgent(BaseAgent):
         lot_output = state.agent_outputs.get("lot_intelligence", {})
         drift_output = state.agent_outputs.get("drift_intelligence", {})
 
-        lot_ratio = lot_output.get("deviation_ratio")
+        lot_anomaly_score = lot_output.get("anomaly_score")
         drift_change = drift_output.get("percentage_change")
         projected_168h = drift_output.get("projected_168h")
 
-        if lot_ratio is None or drift_change is None:
+        if lot_anomaly_score is None or drift_change is None:
             finding = Finding(
                 agent=self.name,
                 component_id=state.component_id,
@@ -38,7 +38,7 @@ class LatentDefectAgent(BaseAgent):
 
             return state
 
-        lot_risk = min(lot_ratio / 2.0, 1.0)
+        lot_risk = lot_anomaly_score
         drift_risk = min(abs(drift_change) / 50.0, 1.0)
 
         risk_score = (
@@ -70,7 +70,7 @@ class LatentDefectAgent(BaseAgent):
                 "lot deviation and early drift behaviour."
             ),
             evidence=[
-                f"Lot deviation ratio: {lot_ratio:.2f}x.",
+                f"Lot anomaly score: {lot_anomaly_score:.2f}.",
                 f"Early drift change: {drift_change:.2f}%.",
                 (
                     f"Projected 168h leakage: {projected_168h:.2f} uA."

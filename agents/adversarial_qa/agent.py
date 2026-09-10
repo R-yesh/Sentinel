@@ -38,12 +38,12 @@ class AdversarialQAAgent(BaseAgent):
 
         challenges = []
 
-        lot_ratio = lot_output.get("deviation_ratio")
+        lot_anomaly_score = lot_output.get("anomaly_score")
         projected_168h = drift_output.get("projected_168h")
 
-        if lot_ratio is not None and lot_ratio < 1.5:
+        if lot_anomaly_score is not None and lot_anomaly_score < 0.5:
             challenges.append(
-                "Component is not a strong outlier relative to its manufacturing lot."
+                "Lot-level statistical evidence does not strongly support an outlier classification."
             )
 
         if projected_168h is not None:

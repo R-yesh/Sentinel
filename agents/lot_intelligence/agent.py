@@ -1,6 +1,5 @@
-from statistics import mean
-
 from agents.base import BaseAgent
+from ml.anomaly.detector import detect_lot_anomaly
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
@@ -35,28 +34,24 @@ class LotIntelligenceAgent(BaseAgent):
 
             return state
 
-        lot_mean = mean(lot_values)
+        result = detect_lot_anomaly(
+            value=component_value,
+            population=lot_values,
+        )
 
-        deviation_ratio = component_value / lot_mean
-
-        if deviation_ratio >= 2.0:
+        if result.is_outlier:
             severity = Severity.HIGH
-            score = min(deviation_ratio / 5.0, 1.0)
             finding_type = "lot_outlier"
-
             summary = (
-                "Component leakage is abnormally high relative "
-                "to its manufacturing lot."
+                "Component leakage is statistically anomalous "
+                "relative to its manufacturing lot."
             )
-
         else:
             severity = Severity.INFO
-            score = 0.0
             finding_type = "lot_baseline_pass"
-
             summary = (
-                "Component leakage is consistent with its "
-                "manufacturing lot."
+                "Component leakage is statistically consistent "
+                "with its manufacturing lot."
             )
 
         finding = Finding(
@@ -64,27 +59,37 @@ class LotIntelligenceAgent(BaseAgent):
             component_id=state.component_id,
             finding_type=finding_type,
             severity=severity,
-            score=score,
+            score=result.anomaly_score,
             confidence=0.9,
             summary=summary,
             evidence=[
-                f"Component leakage at 24h: {component_value:.2f} uA.",
-                f"Lot mean leakage at 24h: {lot_mean:.2f} uA.",
-                f"Component is {deviation_ratio:.2f}x the lot mean.",
+                f"Component leakage at 24h: {result.value:.2f} uA.",
+                f"Lot median leakage at 24h: {result.lot_median:.2f} uA.",
+                f"Lot MAD: {result.lot_mad:.2f} uA.",
+                f"Robust z-score: {result.robust_z_score:.2f}.",
+                f"Percentile rank: {result.percentile * 100:.1f}%.",
             ],
             metadata={
-                "component_value": component_value,
-                "lot_mean": lot_mean,
-                "deviation_ratio": deviation_ratio,
+                "component_value": result.value,
+                "lot_median": result.lot_median,
+                "lot_mad": result.lot_mad,
+                "robust_z_score": result.robust_z_score,
+                "percentile": result.percentile,
+                "anomaly_score": result.anomaly_score,
+                "is_outlier": result.is_outlier,
             },
         )
 
         state.findings.append(finding)
 
         state.agent_outputs[self.name] = {
-            "lot_mean": lot_mean,
-            "deviation_ratio": deviation_ratio,
-            "passed": deviation_ratio < 2.0,
+            "lot_median": result.lot_median,
+            "lot_mad": result.lot_mad,
+            "robust_z_score": result.robust_z_score,
+            "percentile": result.percentile,
+            "anomaly_score": result.anomaly_score,
+            "is_outlier": result.is_outlier,
+            "passed": not result.is_outlier,
         }
 
         return state

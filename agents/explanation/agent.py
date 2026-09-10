@@ -16,7 +16,7 @@ class ExplanationAgent(BaseAgent):
         decision = judge_output.get("decision", "UNKNOWN")
         reason_code = judge_output.get("reason_code", "UNKNOWN")
 
-        lot_ratio = lot_output.get("deviation_ratio")
+        lot_anomaly_score = lot_output.get("anomaly_score")
         drift_change = drift_output.get("percentage_change")
         projected_168h = drift_output.get("projected_168h")
         latent_risk = latent_output.get("risk_score")
@@ -26,9 +26,9 @@ class ExplanationAgent(BaseAgent):
             f"Sentinel recommends {decision} for component {state.component_id}."
         ]
 
-        if lot_ratio is not None:
+        if lot_anomaly_score is not None:
             explanation_parts.append(
-                f"The component measures {lot_ratio:.2f}x the lot baseline."
+                f"The lot-relative anomaly score is {lot_anomaly_score:.2f}."
             )
 
         if drift_change is not None:

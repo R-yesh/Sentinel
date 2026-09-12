@@ -39,23 +39,30 @@ def generate_component(component_id: int) -> dict:
             -0.002,
             0.004,
         )
+        instability = 0.0
 
     elif defect_type == "mild_drift":
         drift_per_hour = random.uniform(
             0.01,
             0.025,
         )
+        instability = 0.0
 
     elif defect_type == "strong_drift":
         drift_per_hour = random.uniform(
             0.03,
             0.07,
         )
+        instability = 0.0
 
     else:
         drift_per_hour = random.uniform(
             0.005,
             0.015,
+        )
+        instability = random.uniform(
+            0.4,
+            1.0,
         )
 
     leakage_0h = baseline
@@ -63,28 +70,23 @@ def generate_component(component_id: int) -> dict:
     leakage_24h = (
         baseline
         + drift_per_hour * 24
+        + instability * 0.8
         + noise_24h
     )
 
     leakage_96h = (
         baseline
         + drift_per_hour * 96
+        + instability * 3.0
         + noise_96h
     )
 
     leakage_168h = (
         baseline
         + drift_per_hour * 168
+        + instability * 12.0
         + noise_168h
     )
-
-    if defect_type == "latent_defect":
-        late_acceleration = random.uniform(
-            8.0,
-            20.0,
-        )
-
-        leakage_168h += late_acceleration
 
     return {
         "component_id": f"C{component_id:04d}",

@@ -18,7 +18,7 @@ class ExplanationAgent(BaseAgent):
 
         lot_anomaly_score = lot_output.get("anomaly_score")
         drift_change = drift_output.get("percentage_change")
-        projected_168h = drift_output.get("projected_168h")
+        predicted_168h = drift_output.get("predicted_168h")
         latent_risk = latent_output.get("risk_score")
         challenge_strength = adversarial_output.get("challenge_strength")
 
@@ -36,9 +36,9 @@ class ExplanationAgent(BaseAgent):
                 f"Early leakage changed by {drift_change:.2f}%."
             )
 
-        if projected_168h is not None:
+        if predicted_168h is not None:
             explanation_parts.append(
-                f"The current 168h projection is {projected_168h:.2f} uA."
+                f"The current 168h prediction is {predicted_168h:.2f} uA."
             )
 
         if latent_risk is not None:

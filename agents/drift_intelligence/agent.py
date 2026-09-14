@@ -1,4 +1,7 @@
+import pandas as pd
+
 from agents.base import BaseAgent
+from ml.drift.predictor import predict_168h
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
@@ -7,10 +10,10 @@ class DriftIntelligenceAgent(BaseAgent):
     name = "drift_intelligence"
 
     async def run(self, state: WorkflowState) -> WorkflowState:
-        value_0h = state.raw_data.get("leakage_0h")
-        value_24h = state.raw_data.get("leakage_24h")
+        leakage_0h = state.raw_data.get("leakage_0h")
+        leakage_24h = state.raw_data.get("leakage_24h")
 
-        if value_0h is None or value_24h is None:
+        if leakage_0h is None or leakage_24h is None:
             finding = Finding(
                 agent=self.name,
                 component_id=state.component_id,
@@ -33,13 +36,34 @@ class DriftIntelligenceAgent(BaseAgent):
 
             return state
 
-        change = value_24h - value_0h
+        change = leakage_24h - leakage_0h
         drift_rate = change / 24
 
-        projected_168h = value_0h + (drift_rate * 168)
+        # predicted_168h = leakage_0h + (drift_rate * 168)
 
-        if value_0h != 0:
-            percentage_change = (change / value_0h) * 100
+        component_data = pd.DataFrame(
+            [
+                {
+                    "leakage_0h": leakage_0h,
+                    "leakage_24h": leakage_24h,
+                }
+            ]
+        )
+
+        predictions, uncertainties = predict_168h(
+            component_data
+        )
+
+        predicted_168h = float(
+            predictions[0]
+        )
+
+        uncertainty = float(
+            uncertainties[0]
+        )
+
+        if leakage_0h != 0:
+            percentage_change = (change / leakage_0h) * 100
         else:
             percentage_change = 0.0
 
@@ -71,18 +95,19 @@ class DriftIntelligenceAgent(BaseAgent):
             confidence=0.75,
             summary=summary,
             evidence=[
-                f"Leakage at 0h: {value_0h:.2f} uA.",
-                f"Leakage at 24h: {value_24h:.2f} uA.",
+                f"Leakage at 0h: {leakage_0h:.2f} uA.",
+                f"Leakage at 24h: {leakage_24h:.2f} uA.",
                 f"Early leakage change: {percentage_change:.2f}%.",
-                f"Linear 168h projection: {projected_168h:.2f} uA.",
+                f"Linear 168h prediction: {predicted_168h:.2f} uA.",
             ],
             metadata={
-                "value_0h": value_0h,
-                "value_24h": value_24h,
+                "leakage_0h": leakage_0h,
+                "leakage_24h": leakage_24h,
                 "change": change,
                 "percentage_change": percentage_change,
                 "drift_rate_per_hour": drift_rate,
-                "projected_168h": projected_168h,
+                "predicted_168h": predicted_168h,
+                "prediction_uncertainty": uncertainty,
             },
         )
 
@@ -91,7 +116,8 @@ class DriftIntelligenceAgent(BaseAgent):
         state.agent_outputs[self.name] = {
             "percentage_change": percentage_change,
             "drift_rate_per_hour": drift_rate,
-            "projected_168h": projected_168h,
+            "predicted_168h": predicted_168h,
+            "prediction_uncertainty": uncertainty,
             "passed": percentage_change < 20,
         }
 

@@ -39,14 +39,14 @@ class AdversarialQAAgent(BaseAgent):
         challenges = []
 
         lot_anomaly_score = lot_output.get("anomaly_score")
-        projected_168h = drift_output.get("projected_168h")
+        predicted_168h = drift_output.get("predicted_168h")
 
         if lot_anomaly_score is not None and lot_anomaly_score < 0.5:
             challenges.append(
                 "Lot-level statistical evidence does not strongly support an outlier classification."
             )
 
-        if projected_168h is not None:
+        if predicted_168h is not None:
             challenges.append(
                 "The 168h value is currently based on extrapolation rather than an observed measurement."
             )

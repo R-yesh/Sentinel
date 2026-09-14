@@ -12,7 +12,7 @@ class LatentDefectAgent(BaseAgent):
 
         lot_anomaly_score = lot_output.get("anomaly_score")
         drift_change = drift_output.get("percentage_change")
-        projected_168h = drift_output.get("projected_168h")
+        predicted_168h = drift_output.get("predicted_168h")
 
         if lot_anomaly_score is None or drift_change is None:
             finding = Finding(
@@ -73,9 +73,9 @@ class LatentDefectAgent(BaseAgent):
                 f"Lot anomaly score: {lot_anomaly_score:.2f}.",
                 f"Early drift change: {drift_change:.2f}%.",
                 (
-                    f"Projected 168h leakage: {projected_168h:.2f} uA."
-                    if projected_168h is not None
-                    else "Projected 168h leakage unavailable."
+                    f"predicted 168h leakage: {predicted_168h:.2f} uA."
+                    if predicted_168h is not None
+                    else "predicted 168h leakage unavailable."
                 ),
             ],
             metadata={

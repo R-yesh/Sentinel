@@ -5,6 +5,7 @@ from ml.drift.predictor import predict_168h
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
+EARLY_DRIFT_THRESHOLD = 6.0
 
 class DriftIntelligenceAgent(BaseAgent):
     name = "drift_intelligence"
@@ -37,9 +38,7 @@ class DriftIntelligenceAgent(BaseAgent):
             return state
 
         change = leakage_24h - leakage_0h
-        drift_rate = change / 24
-
-        # predicted_168h = leakage_0h + (drift_rate * 168)
+        early_slope = change / 24
 
         component_data = pd.DataFrame(
             [
@@ -67,7 +66,7 @@ class DriftIntelligenceAgent(BaseAgent):
         else:
             percentage_change = 0.0
 
-        if percentage_change >= 20:
+        if percentage_change >= EARLY_DRIFT_THRESHOLD:
             severity = Severity.HIGH
             finding_type = "abnormal_positive_drift"
             score = min(percentage_change / 100, 1.0)
@@ -98,14 +97,14 @@ class DriftIntelligenceAgent(BaseAgent):
                 f"Leakage at 0h: {leakage_0h:.2f} uA.",
                 f"Leakage at 24h: {leakage_24h:.2f} uA.",
                 f"Early leakage change: {percentage_change:.2f}%.",
-                f"Linear 168h prediction: {predicted_168h:.2f} uA.",
+                f"Predicted 168h leakage: {predicted_168h:.2f} uA.",
             ],
             metadata={
                 "leakage_0h": leakage_0h,
                 "leakage_24h": leakage_24h,
                 "change": change,
                 "percentage_change": percentage_change,
-                "drift_rate_per_hour": drift_rate,
+                "early_slope": early_slope,
                 "predicted_168h": predicted_168h,
                 "prediction_uncertainty": uncertainty,
             },
@@ -115,10 +114,10 @@ class DriftIntelligenceAgent(BaseAgent):
 
         state.agent_outputs[self.name] = {
             "percentage_change": percentage_change,
-            "drift_rate_per_hour": drift_rate,
+            "early_slope": early_slope,
             "predicted_168h": predicted_168h,
             "prediction_uncertainty": uncertainty,
-            "passed": percentage_change < 20,
+            "passed": percentage_change < EARLY_DRIFT_THRESHOLD,
         }
 
         return state

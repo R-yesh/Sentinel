@@ -11,8 +11,11 @@ class LatentDefectAgent(BaseAgent):
         drift_output = state.agent_outputs.get("drift_intelligence", {})
 
         lot_anomaly_score = lot_output.get("anomaly_score")
+
         drift_change = drift_output.get("percentage_change")
+        early_slope = drift_output.get("early_slope")
         predicted_168h = drift_output.get("predicted_168h")
+        prediction_uncertainty = drift_output.get("prediction_uncertainty")
 
         if lot_anomaly_score is None or drift_change is None:
             finding = Finding(
@@ -38,12 +41,31 @@ class LatentDefectAgent(BaseAgent):
 
             return state
 
-        lot_risk = lot_anomaly_score
-        drift_risk = min(abs(drift_change) / 50.0, 1.0)
+        evidence_flags = []
 
-        risk_score = (
-            0.45 * lot_risk
-            + 0.55 * drift_risk
+        if lot_anomaly_score >= 0.7:
+            evidence_flags.append(
+                "strong_lot_anomaly"
+            )
+
+        if drift_change >= 6:
+            evidence_flags.append(
+                "significant_early_drift"
+            )
+
+        if (
+            prediction_uncertainty is not None
+            and prediction_uncertainty >= 2.0
+        ):
+            evidence_flags.append(
+                "high_prediction_uncertainty"
+            )
+
+        signal_count = len(evidence_flags)
+
+        risk_score = min(
+            signal_count / 3.0,
+            1.0,
         )
 
         if risk_score >= 0.7:
@@ -75,13 +97,17 @@ class LatentDefectAgent(BaseAgent):
                 (
                     f"predicted 168h leakage: {predicted_168h:.2f} uA."
                     if predicted_168h is not None
-                    else "predicted 168h leakage unavailable."
+                    else "Predicted 168h leakage unavailable."
                 ),
             ],
             metadata={
-                "lot_risk": lot_risk,
-                "drift_risk": drift_risk,
                 "risk_score": risk_score,
+                "signals": evidence_flags,
+                "lot_anomaly_score": lot_anomaly_score,
+                "percentage_change": drift_change,
+                "early_slope": early_slope,
+                "predicted_168h": predicted_168h,
+                "prediction_uncertainty": prediction_uncertainty,
             },
         )
 
@@ -89,6 +115,7 @@ class LatentDefectAgent(BaseAgent):
 
         state.agent_outputs[self.name] = {
             "risk_score": risk_score,
+            "signals": evidence_flags,
             "passed": risk_score < 0.4,
         }
 

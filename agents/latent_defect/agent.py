@@ -2,6 +2,7 @@ from agents.base import BaseAgent
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
+UNCERTAINTY_THRESHOLD = 1.5
 
 class LatentDefectAgent(BaseAgent):
     name = "latent_defect"
@@ -55,7 +56,7 @@ class LatentDefectAgent(BaseAgent):
 
         if (
             prediction_uncertainty is not None
-            and prediction_uncertainty >= 2.0
+            and prediction_uncertainty >= UNCERTAINTY_THRESHOLD
         ):
             evidence_flags.append(
                 "high_prediction_uncertainty"

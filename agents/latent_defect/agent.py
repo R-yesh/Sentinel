@@ -2,7 +2,11 @@ from agents.base import BaseAgent
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
-UNCERTAINTY_THRESHOLD = 1.5
+from shared.config.signal_thresholds import (
+    EARLY_DRIFT_THRESHOLD,
+    LOT_ANOMALY_THRESHOLD,
+    UNCERTAINTY_THRESHOLD,
+)
 
 class LatentDefectAgent(BaseAgent):
     name = "latent_defect"
@@ -35,8 +39,10 @@ class LatentDefectAgent(BaseAgent):
             state.findings.append(finding)
 
             state.agent_outputs[self.name] = {
-                "risk_score": None,
-                "passed": False,
+                "assessment": "INSUFFICIENT_EVIDENCE",
+                "evidence_strength": None,
+                "signal_count": 0,
+                "signals": [],
                 "reason": "insufficient_evidence",
             }
 
@@ -44,12 +50,12 @@ class LatentDefectAgent(BaseAgent):
 
         evidence_flags = []
 
-        if lot_anomaly_score >= 0.7:
+        if lot_anomaly_score >= LOT_ANOMALY_THRESHOLD:
             evidence_flags.append(
                 "strong_lot_anomaly"
             )
 
-        if drift_change >= 6:
+        if drift_change >= EARLY_DRIFT_THRESHOLD:
             evidence_flags.append(
                 "significant_early_drift"
             )
@@ -64,33 +70,64 @@ class LatentDefectAgent(BaseAgent):
 
         signal_count = len(evidence_flags)
 
-        risk_score = min(
-            signal_count / 3.0,
-            1.0,
+        evidence_strength = (
+            signal_count / 3.0
         )
 
-        if risk_score >= 0.7:
-            severity = Severity.CRITICAL
-            finding_type = "high_latent_defect_risk"
+        has_lot_anomaly = (
+            "strong_lot_anomaly" in evidence_flags
+        )
 
-        elif risk_score >= 0.4:
+        has_early_drift = (
+            "significant_early_drift" in evidence_flags
+        )
+
+        has_high_uncertainty = (
+            "high_prediction_uncertainty" in evidence_flags
+        )
+
+        if has_early_drift and has_lot_anomaly:
+            assessment = "HIGH_CONCERN"
+            severity = Severity.CRITICAL
+            finding_type = "corroborated_latent_defect_concern"
+
+        elif has_early_drift and has_high_uncertainty:
+            assessment = "ELEVATED_CONCERN"
             severity = Severity.HIGH
-            finding_type = "moderate_latent_defect_risk"
+            finding_type = "elevated_latent_defect_concern"
+
+        elif has_early_drift:
+            assessment = "ELEVATED_CONCERN"
+            severity = Severity.HIGH
+            finding_type = "early_drift_concern"
+
+        elif has_lot_anomaly:
+            assessment = "ELEVATED_CONCERN"
+            severity = Severity.HIGH
+            finding_type = "lot_anomaly_concern"
+
+        elif has_high_uncertainty:
+            assessment = "ELEVATED_CONCERN"
+            severity = Severity.MEDIUM
+            finding_type = "forecast_uncertainty_concern"
 
         else:
+            assessment = "LOW_CONCERN"
             severity = Severity.INFO
-            finding_type = "low_latent_defect_risk"
+            finding_type = "no_latent_defect_signals"
+
+
 
         finding = Finding(
             agent=self.name,
             component_id=state.component_id,
             finding_type=finding_type,
             severity=severity,
-            score=risk_score,
+            score=evidence_strength,
             confidence=0.8,
             summary=(
-                "Latent defect risk was estimated by combining "
-                "lot deviation and early drift behaviour."
+                "Latent defect evidence was synthesized "
+                f"into a provisional {assessment} assessment."
             ),
             evidence=[
                 f"Lot anomaly score: {lot_anomaly_score:.2f}.",
@@ -102,22 +139,34 @@ class LatentDefectAgent(BaseAgent):
                 ),
             ],
             metadata={
-                "risk_score": risk_score,
+                "assessment": assessment,
+                "evidence_strength": evidence_strength,
+                "signal_count": signal_count,
                 "signals": evidence_flags,
                 "lot_anomaly_score": lot_anomaly_score,
                 "percentage_change": drift_change,
                 "early_slope": early_slope,
                 "predicted_168h": predicted_168h,
-                "prediction_uncertainty": prediction_uncertainty,
+                "prediction_uncertainty": (
+                    prediction_uncertainty
+                ),
             },
         )
 
         state.findings.append(finding)
 
         state.agent_outputs[self.name] = {
-            "risk_score": risk_score,
+            "assessment": assessment,
+            "evidence_strength": evidence_strength,
+            "signal_count": signal_count,
             "signals": evidence_flags,
-            "passed": risk_score < 0.4,
+            "lot_anomaly_score": lot_anomaly_score,
+            "percentage_change": drift_change,
+            "early_slope": early_slope,
+            "predicted_168h": predicted_168h,
+            "prediction_uncertainty": (
+                prediction_uncertainty
+            ),
         }
 
         return state

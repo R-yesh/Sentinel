@@ -5,7 +5,9 @@ from ml.drift.predictor import predict_168h
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
-EARLY_DRIFT_THRESHOLD = 6.0
+from shared.config.signal_thresholds import (
+    EARLY_DRIFT_THRESHOLD,
+)
 
 class DriftIntelligenceAgent(BaseAgent):
     name = "drift_intelligence"

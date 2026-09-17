@@ -3,9 +3,11 @@ import pandas as pd
 from ml.drift.predictor import predict_168h
 from ml.anomaly.detector import detect_lot_anomaly
 
-LOT_ANOMALY_THRESHOLD = 0.7
-EARLY_DRIFT_THRESHOLD = 6.0
-UNCERTAINTY_THRESHOLD = 1.5
+from shared.config.signal_thresholds import (
+    EARLY_DRIFT_THRESHOLD,
+    LOT_ANOMALY_THRESHOLD,
+    UNCERTAINTY_THRESHOLD,
+)
 
 DANGEROUS_ERROR_THRESHOLD = 2.0
 

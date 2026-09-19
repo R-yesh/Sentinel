@@ -2,6 +2,13 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+class ChallengeType(str, Enum):
+    FORECAST_LIMITATION = "FORECAST_LIMITATION"
+    MODEL_UNCERTAINTY = "MODEL_UNCERTAINTY"
+    EVIDENCE_CONFLICT = "EVIDENCE_CONFLICT"
+    CORROBORATING_EVIDENCE = "CORROBORATING_EVIDENCE"
+    ASSUMPTION_CHALLENGE = "ASSUMPTION_CHALLENGE"
+    MISSING_EVIDENCE = "MISSING_EVIDENCE"
 
 class ChallengeDirection(str, Enum):
     LOWER_CONCERN = "LOWER_CONCERN"
@@ -10,7 +17,7 @@ class ChallengeDirection(str, Enum):
 
 
 class AdversarialChallenge(BaseModel):
-    challenge_type: str
+    challenge_type: ChallengeType
     direction: ChallengeDirection
     summary: str
 

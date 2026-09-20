@@ -1,4 +1,6 @@
 from agents.base import BaseAgent
+from llm.client import generate_structured
+from shared.schemas.adversarial import AdversarialReview
 from shared.schemas.findings import Finding, Severity
 from shared.schemas.workflow import WorkflowState
 
@@ -8,95 +10,169 @@ class AdversarialQAAgent(BaseAgent):
 
     async def run(self, state: WorkflowState) -> WorkflowState:
         latent_output = state.agent_outputs.get("latent_defect", {})
-        lot_output = state.agent_outputs.get("lot_intelligence", {})
-        drift_output = state.agent_outputs.get("drift_intelligence", {})
 
-        latent_risk = latent_output.get("risk_score")
+        assessment = latent_output.get("assessment")
 
-        if latent_risk is None:
+        if (
+            assessment is None
+            or assessment == "INSUFFICIENT_EVIDENCE"
+        ):
             finding = Finding(
                 agent=self.name,
                 component_id=state.component_id,
                 finding_type="unable_to_challenge",
                 severity=Severity.MEDIUM,
-                score=0.5,
-                confidence=0.6,
-                summary="Adversarial review could not be completed.",
+                score=0.0,
+                confidence=1.0,
+                summary=(
+                    "Adversarial review could not be completed."
+                ),
                 evidence=[
-                    "Latent defect risk score is unavailable."
+                    (
+                        "Latent defect assessment is unavailable "
+                        "or contains insufficient evidence."
+                    )
                 ],
             )
 
             state.findings.append(finding)
 
             state.agent_outputs[self.name] = {
-                "challenge_strength": None,
+                "review": None,
                 "reason": "insufficient_evidence",
             }
 
             return state
 
-        challenges = []
-
-        lot_anomaly_score = lot_output.get("anomaly_score")
-        projected_168h = drift_output.get("projected_168h")
-
-        if lot_anomaly_score is not None and lot_anomaly_score < 0.5:
-            challenges.append(
-                "Lot-level statistical evidence does not strongly support an outlier classification."
-            )
-
-        if projected_168h is not None:
-            challenges.append(
-                "The 168h value is currently based on extrapolation rather than an observed measurement."
-            )
-
-        challenges.append(
-            "Early drift may not remain linear throughout the full burn-in period."
+        signals = latent_output.get(
+            "signals",
+            [],
         )
 
-        if latent_risk >= 0.7:
-            challenge_strength = 0.3
-        elif latent_risk >= 0.4:
-            challenge_strength = 0.6
-        else:
-            challenge_strength = 0.8
+        lot_anomaly_score = latent_output.get(
+            "lot_anomaly_score"
+        )
 
-        if challenge_strength >= 0.7:
-            severity = Severity.HIGH
-            finding_type = "strong_adversarial_challenge"
+        percentage_change = latent_output.get(
+            "percentage_change"
+        )
 
-        elif challenge_strength >= 0.4:
-            severity = Severity.MEDIUM
-            finding_type = "moderate_adversarial_challenge"
+        early_slope = latent_output.get(
+            "early_slope"
+        )
 
-        else:
-            severity = Severity.INFO
-            finding_type = "weak_adversarial_challenge"
+        predicted_168h = latent_output.get(
+            "predicted_168h"
+        )
+
+        prediction_uncertainty = latent_output.get(
+            "prediction_uncertainty"
+        )
+
+        prompt = f"""
+        You are the Adversarial QA Agent in Sentinel,
+        a semiconductor burn-in reliability analysis system.
+
+        Your job is to critically challenge a provisional
+        latent-defect assessment.
+
+        You are NOT the final decision maker.
+
+        Component:
+        {state.component_id}
+
+        Provisional latent-defect assessment:
+        {assessment}
+
+        Activated signals:
+        {signals}
+
+        Evidence:
+        - Lot anomaly score: {lot_anomaly_score}
+        - Early leakage percentage change: {percentage_change}%
+        - Early leakage slope: {early_slope} uA/h
+        - Predicted 168h leakage: {predicted_168h} uA
+        - Prediction uncertainty: {prediction_uncertainty} uA
+
+        Interpretation constraints:
+
+        1. A low lot anomaly score does NOT prove that an
+        individual component is safe. It only indicates
+        weak lot-level corroboration.
+
+        2. Prediction uncertainty represents disagreement
+        among Random Forest tree predictions. It is NOT
+        a calibrated confidence interval or direct
+        probability of prediction error.
+
+        3. The predicted 168h leakage is a model forecast,
+        not an observed measurement.
+
+        4. Early leakage behaviour may change over the
+        remainder of burn-in. Do not assume linear
+        continuation without qualification.
+
+        5. Activated signals are evidence indicators,
+        not independent probabilities.
+
+        Your task:
+
+        - Search for evidence that could LOWER concern.
+        - Search for evidence that could INCREASE concern.
+        - Identify uncertainty or assumptions that materially
+        affect the reliability assessment and may warrant REVIEW.
+        Do not manufacture a REVIEW argument merely because
+        models and forecasts inherently contain uncertainty.
+        - Challenge both overly pessimistic and overly reassuring
+        interpretations.
+        - Do not issue PASS, REVIEW, or REJECT.
+        - Do not invent measurements or evidence.
+        - Base every challenge only on the evidence supplied above.
+        """
+
+        review = generate_structured(
+            prompt=prompt,
+            response_schema=AdversarialReview,
+        )
+
+        challenge_evidence = [
+            (
+                f"[{challenge.direction.value}] "
+                f"{challenge.challenge_type.value}: "
+                f"{challenge.summary}"
+            )
+            for challenge in review.challenges
+        ]
 
         finding = Finding(
             agent=self.name,
             component_id=state.component_id,
-            finding_type=finding_type,
-            severity=severity,
-            score=challenge_strength,
-            confidence=0.75,
+            finding_type="adversarial_review",
+            severity=Severity.INFO,
+            score=0.0,
+            confidence=0.8,
             summary=(
-                "Adversarial QA reviewed the latent defect conclusion "
-                "and searched for plausible counterarguments."
+                "Adversarial QA stress-tested the provisional "
+                "latent-defect assessment."
             ),
-            evidence=challenges,
+            evidence=challenge_evidence,
             metadata={
-                "latent_risk": latent_risk,
-                "challenge_strength": challenge_strength,
+                "challenged_assessment": (
+                    review.challenged_assessment
+                ),
+                "unresolved_conflict": (
+                    review.unresolved_conflict
+                ),
+                "challenge_count": len(
+                    review.challenges
+                ),
             },
         )
 
         state.findings.append(finding)
 
         state.agent_outputs[self.name] = {
-            "challenge_strength": challenge_strength,
-            "challenges": challenges,
+            "review": review.model_dump(),
         }
 
         return state

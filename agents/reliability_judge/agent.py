@@ -182,6 +182,21 @@ class ReliabilityJudgeAgent(BaseAgent):
         not meaningfully weaken severe observed early degradation.
         Likewise, ordinary forecast uncertainty should not turn
         otherwise healthy observed behaviour into REVIEW.
+
+        9. Do not independently redefine or recalibrate Sentinel's
+        deterministic signal thresholds.
+
+        If a signal is activated, treat that activation as established
+        evidence from the upstream calibrated analysis.
+
+        For example, if "significant_early_drift" is activated, do not
+        dismiss the underlying drift as insignificant, negligible, or
+        reassuring merely because its numerical magnitude appears small
+        in isolation.
+
+        You may still weigh an activated signal against conflicting
+        evidence, but do not override the meaning of the calibrated
+        signal itself.
         """
 
         judge_result = generate_structured(

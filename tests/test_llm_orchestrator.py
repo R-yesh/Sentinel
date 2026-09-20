@@ -117,3 +117,16 @@ async def test_judge_decision_scenarios(
     )
 
     assert result.final_decision == expected_decision
+
+    explanation_output = result.agent_outputs.get(
+        "explanation",
+        {},
+    )
+
+    assert result.explanation is not None
+
+    assert explanation_output.get("headline")
+    assert explanation_output.get("summary")
+    assert explanation_output.get("key_evidence")
+    assert explanation_output.get("decision_reasoning")
+    assert explanation_output.get("recommended_action")

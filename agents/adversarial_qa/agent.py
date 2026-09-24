@@ -22,8 +22,6 @@ class AdversarialQAAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="unable_to_challenge",
                 severity=Severity.MEDIUM,
-                score=0.0,
-                confidence=1.0,
                 summary=(
                     "Adversarial review could not be completed."
                 ),
@@ -149,8 +147,6 @@ class AdversarialQAAgent(BaseAgent):
             component_id=state.component_id,
             finding_type="adversarial_review",
             severity=Severity.INFO,
-            score=0.0,
-            confidence=0.8,
             summary=(
                 "Adversarial QA stress-tested the provisional "
                 "latent-defect assessment."

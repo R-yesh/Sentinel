@@ -28,8 +28,6 @@ class LatentDefectAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="insufficient_combined_evidence",
                 severity=Severity.MEDIUM,
-                score=0.5,
-                confidence=0.6,
                 summary="Insufficient evidence to estimate latent defect risk.",
                 evidence=[
                     "Lot and drift intelligence outputs are both required."
@@ -123,8 +121,6 @@ class LatentDefectAgent(BaseAgent):
             component_id=state.component_id,
             finding_type=finding_type,
             severity=severity,
-            score=evidence_strength,
-            confidence=0.8,
             summary=(
                 "Latent defect evidence was synthesized "
                 f"into a provisional {assessment} assessment."

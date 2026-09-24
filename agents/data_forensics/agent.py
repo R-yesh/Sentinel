@@ -82,8 +82,6 @@ class DataForensicsAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="invalid_burnin_data",
                 severity=Severity.HIGH,
-                score=1.0,
-                confidence=1.0,
                 summary=(
                     "Invalid burn-in measurement data were detected."
                 ),
@@ -100,8 +98,6 @@ class DataForensicsAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="data_quality_pass",
                 severity=Severity.INFO,
-                score=0.0,
-                confidence=1.0,
                 summary=(
                     "Burn-in measurement data passed validation."
                 ),

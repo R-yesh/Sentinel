@@ -6,9 +6,14 @@ import pandas as pd
 
 RANDOM_SEED = 42
 NUM_COMPONENTS = 1000
+LOT_SIZE = 50
+LOT_BASELINE_SIGMA = 0.4
 
-
-def generate_component(component_id: int) -> dict:
+def generate_component(
+    component_id: int,
+    lot_id: str,
+    lot_baseline: float,
+    ) -> dict:
     defect_type = random.choices(
         population=[
             "healthy",
@@ -26,8 +31,8 @@ def generate_component(component_id: int) -> dict:
     )[0]
 
     baseline = random.gauss(
-        mu=10.0,
-        sigma=0.8,
+        mu=lot_baseline,
+        sigma=0.6,
     )
 
     noise_24h = random.gauss(0, 0.2)
@@ -90,6 +95,7 @@ def generate_component(component_id: int) -> dict:
 
     return {
         "component_id": f"C{component_id:04d}",
+        "lot_id": lot_id,
         "defect_type": defect_type,
         "leakage_0h": leakage_0h,
         "leakage_24h": leakage_24h,
@@ -103,10 +109,42 @@ def generate_dataset(
 ) -> pd.DataFrame:
     random.seed(RANDOM_SEED)
 
-    records = [
-        generate_component(i)
-        for i in range(1, num_components + 1)
-    ]
+    num_lots = (
+        num_components + LOT_SIZE - 1
+    ) // LOT_SIZE
+
+    lot_baselines = {
+        lot_number: random.gauss(
+            mu=10.0,
+            sigma=LOT_BASELINE_SIGMA,
+        )
+        for lot_number in range(
+            1,
+            num_lots + 1,
+        )
+    }
+
+    records = []
+
+    for component_id in range(
+        1,
+        num_components + 1,
+    ):
+        lot_number = (
+            (component_id - 1) // LOT_SIZE
+        ) + 1
+
+        lot_id = f"LOT-{lot_number:03d}"
+
+        record = generate_component(
+            component_id=component_id,
+            lot_id=lot_id,
+            lot_baseline=lot_baselines[
+                lot_number
+            ],
+        )
+
+        records.append(record)
 
     return pd.DataFrame(records)
 

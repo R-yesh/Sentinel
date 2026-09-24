@@ -17,8 +17,6 @@ class LotIntelligenceAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="insufficient_lot_data",
                 severity=Severity.MEDIUM,
-                score=0.5,
-                confidence=1.0,
                 summary="Insufficient data for lot-level comparison.",
                 evidence=[
                     "Component measurement or peer lot measurements are missing."
@@ -59,8 +57,6 @@ class LotIntelligenceAgent(BaseAgent):
             component_id=state.component_id,
             finding_type=finding_type,
             severity=severity,
-            score=result.anomaly_score,
-            confidence=0.9,
             summary=summary,
             evidence=[
                 f"Component leakage at 24h: {result.value:.2f} uA.",

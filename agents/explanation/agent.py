@@ -38,8 +38,6 @@ class ExplanationAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="explanation_unavailable",
                 severity=Severity.MEDIUM,
-                score=0.0,
-                confidence=1.0,
                 summary=(
                     "Explanation could not be generated because "
                     "no Reliability Judge decision is available."
@@ -182,8 +180,6 @@ class ExplanationAgent(BaseAgent):
             component_id=state.component_id,
             finding_type="qa_explanation",
             severity=Severity.INFO,
-            score=0.0,
-            confidence=1.0,
             summary=result.headline,
             evidence=result.key_evidence,
             metadata={

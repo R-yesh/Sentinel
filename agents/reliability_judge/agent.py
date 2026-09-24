@@ -28,8 +28,6 @@ class ReliabilityJudgeAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="reliability_decision",
                 severity=Severity.MEDIUM,
-                score=0.0,
-                confidence=1.0,
                 summary=(
                     "Reliability Judge requires human review "
                     "because sufficient evidence is unavailable."
@@ -221,8 +219,6 @@ class ReliabilityJudgeAgent(BaseAgent):
             component_id=state.component_id,
             finding_type="reliability_decision",
             severity=severity,
-            score=0.0,
-            confidence=0.8,
             summary=(
                 f"Reliability Judge recommends {decision}."
             ),

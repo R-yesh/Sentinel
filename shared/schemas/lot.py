@@ -8,6 +8,10 @@ class LotContext(BaseModel):
         default_factory=list
     )
 
-    leakage_24h_population: list[float] = Field(
+    leakage_0h_population: list[float | None] = Field(
+        default_factory=list
+    )
+
+    leakage_24h_population: list[float | None] = Field(
         default_factory=list
     )

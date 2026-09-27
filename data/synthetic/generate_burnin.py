@@ -5,15 +5,26 @@ import pandas as pd
 
 
 RANDOM_SEED = 42
+
 NUM_COMPONENTS = 1000
 LOT_SIZE = 50
+
+# Controls how much the mean baseline differs
+# from one manufacturing lot to another.
 LOT_BASELINE_SIGMA = 0.4
+
+# Controls the possible natural component-to-component
+# spread within each individual lot.
+LOT_SIGMA_MIN = 0.4
+LOT_SIGMA_MAX = 0.8
+
 
 def generate_component(
     component_id: int,
     lot_id: str,
     lot_baseline: float,
-    ) -> dict:
+    lot_sigma: float,
+) -> dict:
     defect_type = random.choices(
         population=[
             "healthy",
@@ -32,12 +43,23 @@ def generate_component(
 
     baseline = random.gauss(
         mu=lot_baseline,
-        sigma=0.6,
+        sigma=lot_sigma,
     )
 
-    noise_24h = random.gauss(0, 0.2)
-    noise_96h = random.gauss(0, 0.3)
-    noise_168h = random.gauss(0, 0.4)
+    noise_24h = random.gauss(
+        0,
+        0.2,
+    )
+
+    noise_96h = random.gauss(
+        0,
+        0.3,
+    )
+
+    noise_168h = random.gauss(
+        0,
+        0.4,
+    )
 
     if defect_type == "healthy":
         drift_per_hour = random.uniform(
@@ -113,11 +135,17 @@ def generate_dataset(
         num_components + LOT_SIZE - 1
     ) // LOT_SIZE
 
-    lot_baselines = {
-        lot_number: random.gauss(
-            mu=10.0,
-            sigma=LOT_BASELINE_SIGMA,
-        )
+    lot_profiles = {
+        lot_number: {
+            "baseline": random.gauss(
+                mu=10.0,
+                sigma=LOT_BASELINE_SIGMA,
+            ),
+            "sigma": random.uniform(
+                LOT_SIGMA_MIN,
+                LOT_SIGMA_MAX,
+            ),
+        }
         for lot_number in range(
             1,
             num_lots + 1,
@@ -136,11 +164,18 @@ def generate_dataset(
 
         lot_id = f"LOT-{lot_number:03d}"
 
+        lot_profile = lot_profiles[
+            lot_number
+        ]
+
         record = generate_component(
             component_id=component_id,
             lot_id=lot_id,
-            lot_baseline=lot_baselines[
-                lot_number
+            lot_baseline=lot_profile[
+                "baseline"
+            ],
+            lot_sigma=lot_profile[
+                "sigma"
             ],
         )
 
@@ -156,6 +191,11 @@ def main():
         "data/synthetic/burnin_dataset.csv"
     )
 
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     dataset.to_csv(
         output_path,
         index=False,
@@ -166,11 +206,22 @@ def main():
     )
 
     print(
-        dataset["defect_type"].value_counts()
+        f"Generated "
+        f"{dataset['lot_id'].nunique()} lots."
     )
 
     print(
-        f"Saved dataset to {output_path}"
+        "\nDefect distribution:"
+    )
+
+    print(
+        dataset[
+            "defect_type"
+        ].value_counts()
+    )
+
+    print(
+        f"\nSaved dataset to {output_path}"
     )
 
 

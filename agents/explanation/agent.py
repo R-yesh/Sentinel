@@ -13,6 +13,19 @@ class ExplanationAgent(BaseAgent):
         adversarial_output = state.agent_outputs.get("adversarial_qa", {})
         judge_output = state.agent_outputs.get("reliability_judge", {})
 
+        lot_output = state.agent_outputs.get("lot_intelligence", {})
+
+        robust_z_score = lot_output.get("robust_z_score")
+        robust_anomaly_score = lot_output.get("robust_anomaly_score")
+        deviation_direction = lot_output.get("deviation_direction")
+        lot_evidence_level = lot_output.get("evidence_level")
+
+        isolation_score = lot_output.get("isolation_score")
+        isolation_anomaly = lot_output.get("isolation_anomaly")
+
+        lot_median = lot_output.get("lot_median")
+        lot_population_size = lot_output.get("lot_population_size")
+
         assessment = latent_output.get("assessment")
         signals = latent_output.get("signals", [])
 
@@ -102,6 +115,16 @@ class ExplanationAgent(BaseAgent):
         Activated Sentinel signals:
         {signals}
 
+        Lot Intelligence evidence:
+        - Lot population size: {lot_population_size}
+        - Lot median leakage at 24h: {lot_median} uA
+        - Robust z-score: {robust_z_score}
+        - Robust anomaly score: {robust_anomaly_score}
+        - Deviation direction: {deviation_direction}
+        - Robust evidence level: {lot_evidence_level}
+        - Isolation Forest anomaly score: {isolation_score}
+        - Isolation Forest anomaly classification: {isolation_anomaly}
+
         Adversarial review:
         {adversarial_review}
 
@@ -109,8 +132,19 @@ class ExplanationAgent(BaseAgent):
 
         1. Explain the final decision in clear engineering language.
 
-        2. Clearly distinguish observed evidence from
-        model-derived forecasts or uncertainty.
+        2. Clearly distinguish evidence provenance:
+
+        - Leakage measurements at 0h and 24h are observed.
+        - Percentage change and early slope are deterministic
+          quantities derived from observed measurements.
+        - Robust z-score, percentile, deviation direction,
+          and robust evidence level are statistical
+          lot-relative analyses derived from observed data.
+        - Isolation Forest output is model-derived anomaly
+          evidence.
+        - Predicted 168h leakage is a model forecast.
+        - Random Forest tree disagreement is a model-derived
+          uncertainty indicator.
 
         3. Include the most decision-relevant numerical
         evidence when available.
@@ -128,9 +162,18 @@ class ExplanationAgent(BaseAgent):
         calibrated confidence interval or probability
         of failure.
 
-        8. A lot anomaly score describes how unusual this
-        component is relative to its lot. Do not interpret
-        it as proof of a systemic lot-wide defect.
+        8. Lot Intelligence contains two complementary
+        analytical views:
+
+        - Robust statistics describe the component's
+          univariate 24h leakage deviation relative to
+          its manufacturing lot.
+
+        - Isolation Forest provides a model-derived
+          multivariate anomaly assessment.
+
+        Do not treat either output as a calibrated
+        probability of defect, failure, or risk.
 
         9. The recommended action must be consistent with
         the final decision:
@@ -149,17 +192,45 @@ class ExplanationAgent(BaseAgent):
         unstable, erroneous, or an artifact solely because tree
         disagreement is high.
 
-        12. A high lot anomaly score means the component is unusual
-        relative to its lot population. Never interpret this as
-        systemic, lot-wide, batch-wide, or manufacturing-wide
-        instability without separate supporting evidence.
+        12. The robust anomaly score is a normalized
+        deviation measure derived from the magnitude
+        of the robust z-score. It is not a direct
+        reliability risk score.
+
+        Use the robust evidence level and deviation
+        direction when describing the statistical
+        interpretation.
 
         13. Include at most 3 adversarial_context items.
         Include only concerns that materially affect the final
         decision and avoid repetition.
 
-        14. A lot anomaly score is an anomaly/deviation measure,
-        not a direct risk score.
+        14. Isolation Forest anomaly score and anomaly
+        classification are model-derived anomaly evidence.
+        They do not identify a physical defect mechanism
+        and are not probabilities of failure.
+
+        Detector disagreement is not automatically an
+        error. If robust statistics classify the component
+        as typical while Isolation Forest identifies an
+        anomaly, describe this as disagreement between
+        complementary analytical views when it is relevant
+        to the Judge's decision.
+
+        15. A high-side robust deviation means the component
+        has elevated leakage relative to its lot population.
+        It does not establish a systemic, lot-wide,
+        batch-wide, or manufacturing-wide problem.
+
+        16. Low-side robust deviations may be statistically
+        unusual but must not be described as evidence of
+        elevated leakage.
+
+        17. Do not reinterpret or recalibrate Sentinel's
+        upstream evidence classifications. If Lot Intelligence
+        classified robust evidence as ELEVATED,
+        STRONG_DEVIATION, OUTLIER, or TYPICAL, preserve that
+        interpretation faithfully.
 
         Describe low values as weak lot-relative anomaly evidence
         or as the component being statistically consistent with

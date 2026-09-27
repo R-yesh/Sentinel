@@ -4,35 +4,89 @@ from shared.schemas.workflow import WorkflowState
 
 from shared.config.signal_thresholds import (
     EARLY_DRIFT_THRESHOLD,
-    LOT_ANOMALY_THRESHOLD,
     UNCERTAINTY_THRESHOLD,
 )
+
 
 class LatentDefectAgent(BaseAgent):
     name = "latent_defect"
 
-    async def run(self, state: WorkflowState) -> WorkflowState:
-        lot_output = state.agent_outputs.get("lot_intelligence", {})
-        drift_output = state.agent_outputs.get("drift_intelligence", {})
+    async def run(
+        self,
+        state: WorkflowState,
+    ) -> WorkflowState:
+        lot_output = state.agent_outputs.get(
+            "lot_intelligence",
+            {},
+        )
 
-        lot_anomaly_score = lot_output.get("anomaly_score")
+        drift_output = state.agent_outputs.get(
+            "drift_intelligence",
+            {},
+        )
 
-        drift_change = drift_output.get("percentage_change")
-        early_slope = drift_output.get("early_slope")
-        predicted_168h = drift_output.get("predicted_168h")
-        prediction_uncertainty = drift_output.get("prediction_uncertainty")
+        # Lot Intelligence evidence
+        robust_z_score = lot_output.get(
+            "robust_z_score"
+        )
 
-        if lot_anomaly_score is None or drift_change is None:
+        robust_anomaly_score = lot_output.get(
+            "robust_anomaly_score"
+        )
+
+        deviation_direction = lot_output.get(
+            "deviation_direction"
+        )
+
+        evidence_level = lot_output.get(
+            "evidence_level"
+        )
+
+        isolation_score = lot_output.get(
+            "isolation_score"
+        )
+
+        isolation_anomaly = lot_output.get(
+            "isolation_anomaly"
+        )
+
+        # Drift Intelligence evidence
+        drift_change = drift_output.get(
+            "percentage_change"
+        )
+
+        early_slope = drift_output.get(
+            "early_slope"
+        )
+
+        predicted_168h = drift_output.get(
+            "predicted_168h"
+        )
+
+        prediction_uncertainty = drift_output.get(
+            "prediction_uncertainty"
+        )
+
+        # Both upstream evidence sources are required.
+        if (
+            evidence_level is None
+            or isolation_anomaly is None
+            or drift_change is None
+        ):
             finding = Finding(
                 agent=self.name,
                 component_id=state.component_id,
                 finding_type="insufficient_combined_evidence",
                 severity=Severity.MEDIUM,
-                score=0.5,
-                confidence=0.6,
-                summary="Insufficient evidence to estimate latent defect risk.",
+                summary=(
+                    "Insufficient evidence to estimate "
+                    "latent defect concern."
+                ),
                 evidence=[
-                    "Lot and drift intelligence outputs are both required."
+                    (
+                        "Lot Intelligence and Drift Intelligence "
+                        "outputs are both required."
+                    )
                 ],
             )
 
@@ -40,7 +94,6 @@ class LatentDefectAgent(BaseAgent):
 
             state.agent_outputs[self.name] = {
                 "assessment": "INSUFFICIENT_EVIDENCE",
-                "evidence_strength": None,
                 "signal_count": 0,
                 "signals": [],
                 "reason": "insufficient_evidence",
@@ -48,119 +101,227 @@ class LatentDefectAgent(BaseAgent):
 
             return state
 
+        # -------------------------------------------------
+        # Determine analytical conditions first
+        # -------------------------------------------------
+
+        has_elevated_lot_deviation = (
+            deviation_direction == "HIGH"
+            and evidence_level == "ELEVATED"
+        )
+
+        has_strong_lot_deviation = (
+            deviation_direction == "HIGH"
+            and evidence_level == "STRONG_DEVIATION"
+        )
+
+        has_lot_outlier = (
+            deviation_direction == "HIGH"
+            and evidence_level == "OUTLIER"
+        )
+
+        has_lot_deviation = (
+            has_elevated_lot_deviation
+            or has_strong_lot_deviation
+            or has_lot_outlier
+        )
+
+        has_isolation_anomaly = bool(
+            isolation_anomaly
+        )
+
+        has_early_drift = (
+            drift_change >= EARLY_DRIFT_THRESHOLD
+        )
+
+        has_high_uncertainty = (
+            prediction_uncertainty is not None
+            and prediction_uncertainty
+            >= UNCERTAINTY_THRESHOLD
+        )
+
+        # -------------------------------------------------
+        # Promote analytical observations into
+        # reliability-relevant signals
+        # -------------------------------------------------
+
         evidence_flags = []
 
-        if lot_anomaly_score >= LOT_ANOMALY_THRESHOLD:
+        if has_elevated_lot_deviation:
             evidence_flags.append(
-                "strong_lot_anomaly"
+                "elevated_lot_deviation"
             )
 
-        if drift_change >= EARLY_DRIFT_THRESHOLD:
+        if has_strong_lot_deviation:
+            evidence_flags.append(
+                "strong_lot_deviation"
+            )
+
+        if has_lot_outlier:
+            evidence_flags.append(
+                "high_side_lot_outlier"
+            )
+
+        if has_early_drift:
             evidence_flags.append(
                 "significant_early_drift"
             )
 
+        # Isolation Forest remains visible as an analytical
+        # observation, but becomes a reliability signal only
+        # when corroborated by observed drift or high-side
+        # lot-relative deviation.
         if (
-            prediction_uncertainty is not None
-            and prediction_uncertainty >= UNCERTAINTY_THRESHOLD
+            has_isolation_anomaly
+            and (
+                has_early_drift
+                or has_lot_deviation
+            )
         ):
             evidence_flags.append(
-                "high_prediction_uncertainty"
+                "multivariate_anomaly_corroboration"
+            )
+
+        # Prediction uncertainty is model-derived context.
+        # It should strengthen an existing concern rather
+        # than create reliability concern by itself.
+        if (
+            has_high_uncertainty
+            and has_early_drift
+        ):
+            evidence_flags.append(
+                "forecast_uncertainty_corroboration"
             )
 
         signal_count = len(evidence_flags)
 
-        evidence_strength = (
-            signal_count / 3.0
+        has_multivariate_corroboration = (
+            "multivariate_anomaly_corroboration"
+            in evidence_flags
         )
 
-        has_lot_anomaly = (
-            "strong_lot_anomaly" in evidence_flags
+        has_uncertainty_corroboration = (
+            "forecast_uncertainty_corroboration"
+            in evidence_flags
         )
 
-        has_early_drift = (
-            "significant_early_drift" in evidence_flags
-        )
+        # -------------------------------------------------
+        # Provisional assessment
+        # -------------------------------------------------
 
-        has_high_uncertainty = (
-            "high_prediction_uncertainty" in evidence_flags
-        )
-
-        if has_early_drift and has_lot_anomaly:
+        if (
+            has_early_drift
+            and has_lot_deviation
+            and has_multivariate_corroboration
+        ):
             assessment = "HIGH_CONCERN"
             severity = Severity.CRITICAL
-            finding_type = "corroborated_latent_defect_concern"
+            finding_type = (
+                "corroborated_latent_defect_concern"
+            )
 
-        elif has_early_drift and has_high_uncertainty:
+        elif (
+            has_early_drift
+            and (
+                has_lot_deviation
+                or has_multivariate_corroboration
+            )
+        ):
             assessment = "ELEVATED_CONCERN"
             severity = Severity.HIGH
-            finding_type = "elevated_latent_defect_concern"
+            finding_type = (
+                "multi_signal_latent_defect_concern"
+            )
 
         elif has_early_drift:
             assessment = "ELEVATED_CONCERN"
             severity = Severity.HIGH
             finding_type = "early_drift_concern"
 
-        elif has_lot_anomaly:
+        elif (
+            has_lot_deviation
+            and has_multivariate_corroboration
+        ):
             assessment = "ELEVATED_CONCERN"
             severity = Severity.HIGH
-            finding_type = "lot_anomaly_concern"
+            finding_type = (
+                "corroborated_lot_anomaly_concern"
+            )
 
-        elif has_high_uncertainty:
+        elif has_lot_deviation:
             assessment = "ELEVATED_CONCERN"
             severity = Severity.MEDIUM
-            finding_type = "forecast_uncertainty_concern"
+            finding_type = "lot_deviation_concern"
 
         else:
             assessment = "LOW_CONCERN"
             severity = Severity.INFO
-            finding_type = "no_latent_defect_signals"
 
+            if has_isolation_anomaly:
+                finding_type = (
+                    "multivariate_anomaly_noted"
+                )
 
+            elif has_high_uncertainty:
+                finding_type = (
+                    "forecast_uncertainty_noted"
+                )
 
-        finding = Finding(
-            agent=self.name,
-            component_id=state.component_id,
-            finding_type=finding_type,
-            severity=severity,
-            score=evidence_strength,
-            confidence=0.8,
-            summary=(
-                "Latent defect evidence was synthesized "
-                f"into a provisional {assessment} assessment."
+            else:
+                finding_type = (
+                    "no_latent_defect_signals"
+                )
+
+        # -------------------------------------------------
+        # Finding
+        # -------------------------------------------------
+
+        evidence = [
+            (
+                f"Lot evidence level: "
+                f"{evidence_level}."
             ),
-            evidence=[
-                f"Lot anomaly score: {lot_anomaly_score:.2f}.",
-                f"Early drift change: {drift_change:.2f}%.",
-                (
-                    f"predicted 168h leakage: {predicted_168h:.2f} uA."
-                    if predicted_168h is not None
-                    else "Predicted 168h leakage unavailable."
-                ),
-            ],
-            metadata={
-                "assessment": assessment,
-                "evidence_strength": evidence_strength,
-                "signal_count": signal_count,
-                "signals": evidence_flags,
-                "lot_anomaly_score": lot_anomaly_score,
-                "percentage_change": drift_change,
-                "early_slope": early_slope,
-                "predicted_168h": predicted_168h,
-                "prediction_uncertainty": (
-                    prediction_uncertainty
-                ),
-            },
-        )
+            (
+                f"Robust z-score: "
+                f"{robust_z_score:.2f}."
+                if robust_z_score is not None
+                else "Robust z-score unavailable."
+            ),
+            (
+                f"Isolation Forest score: "
+                f"{isolation_score:.4f}."
+                if isolation_score is not None
+                else "Isolation Forest score unavailable."
+            ),
+            (
+                f"Early drift change: "
+                f"{drift_change:.2f}%."
+            ),
+            (
+                f"Predicted 168h leakage: "
+                f"{predicted_168h:.2f} uA."
+                if predicted_168h is not None
+                else "Predicted 168h leakage unavailable."
+            ),
+        ]
 
-        state.findings.append(finding)
-
-        state.agent_outputs[self.name] = {
+        metadata = {
             "assessment": assessment,
-            "evidence_strength": evidence_strength,
             "signal_count": signal_count,
             "signals": evidence_flags,
-            "lot_anomaly_score": lot_anomaly_score,
+
+            "robust_z_score": robust_z_score,
+            "robust_anomaly_score": (
+                robust_anomaly_score
+            ),
+            "deviation_direction": (
+                deviation_direction
+            ),
+            "lot_evidence_level": evidence_level,
+
+            "isolation_score": isolation_score,
+            "isolation_anomaly": isolation_anomaly,
+
             "percentage_change": drift_change,
             "early_slope": early_slope,
             "predicted_168h": predicted_168h,
@@ -168,5 +329,22 @@ class LatentDefectAgent(BaseAgent):
                 prediction_uncertainty
             ),
         }
+
+        finding = Finding(
+            agent=self.name,
+            component_id=state.component_id,
+            finding_type=finding_type,
+            severity=severity,
+            summary=(
+                "Latent defect evidence was synthesized "
+                f"into a provisional {assessment} assessment."
+            ),
+            evidence=evidence,
+            metadata=metadata,
+        )
+
+        state.findings.append(finding)
+
+        state.agent_outputs[self.name] = metadata
 
         return state

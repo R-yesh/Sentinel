@@ -22,8 +22,6 @@ class DriftIntelligenceAgent(BaseAgent):
                 component_id=state.component_id,
                 finding_type="insufficient_drift_data",
                 severity=Severity.MEDIUM,
-                score=0.5,
-                confidence=1.0,
                 summary="Insufficient early burn-in measurements for drift analysis.",
                 evidence=[
                     "Both 0h and 24h leakage measurements are required."
@@ -92,8 +90,6 @@ class DriftIntelligenceAgent(BaseAgent):
             component_id=state.component_id,
             finding_type=finding_type,
             severity=severity,
-            score=score,
-            confidence=0.75,
             summary=summary,
             evidence=[
                 f"Leakage at 0h: {leakage_0h:.2f} uA.",

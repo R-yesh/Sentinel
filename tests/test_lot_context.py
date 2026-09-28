@@ -10,21 +10,25 @@ def make_dataset():
             {
                 "component_id": "C0001",
                 "lot_id": "LOT-001",
+                "leakage_0h": 9.8,
                 "leakage_24h": 10.0,
             },
             {
                 "component_id": "C0002",
                 "lot_id": "LOT-001",
+                "leakage_0h": 10.0,
                 "leakage_24h": 10.2,
             },
             {
                 "component_id": "C0003",
                 "lot_id": "LOT-001",
+                "leakage_0h": 10.2,
                 "leakage_24h": 10.4,
             },
             {
                 "component_id": "C0004",
                 "lot_id": "LOT-002",
+                "leakage_0h": 11.3,
                 "leakage_24h": 11.5,
             },
         ]
@@ -46,6 +50,11 @@ def test_build_lot_context():
         "C0003",
     ]
 
+    assert context.leakage_0h_population == [
+        9.8,
+        10.2,
+    ]
+
     assert context.leakage_24h_population == [
         10.0,
         10.4,
@@ -63,6 +72,7 @@ def test_target_component_is_excluded():
     assert "C0002" not in context.component_ids
 
     assert len(context.component_ids) == 2
+    assert len(context.leakage_0h_population) == 2
     assert len(context.leakage_24h_population) == 2
 
 

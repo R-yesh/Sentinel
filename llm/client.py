@@ -34,7 +34,7 @@ def get_client() -> genai.Client:
     return genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
-            timeout=30_000,
+            timeout=120_000,
         ),
     )
 

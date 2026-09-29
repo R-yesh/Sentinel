@@ -6,3 +6,8 @@ node_modules/
 *.pyc
 .DS_Store
 *.joblib
+!ml/drift/random_forest_model.joblib
+.env.*
+!.env.example
+.vercel/
+.pytest_cache/

@@ -10,7 +10,7 @@ export function OverviewPage() {
     <div className="overview-grid">
       <div className="panel overview-card"><Database size={25} /><span className="tiny-label">01 / AVAILABLE NOW</span><h2>Explore the dataset</h2><p>Find components and manufacturing lots. Inspect observed leakage at 0h and 24h.</p></div>
       <div className="panel overview-card"><ScanLine size={25} /><span className="tiny-label">02 / AVAILABLE NOW</span><h2>Inspect a component</h2><p>Keep component identity, lot context, and source measurements in view.</p></div>
-      <div className="panel overview-card future-card"><Layers3 size={25} /><span className="tiny-label">03 / FUTURE PHASE</span><h2>Follow the evidence</h2><p>Investigation execution, agent evidence, and reliability reports will follow.</p></div>
+      <div className="panel overview-card"><Layers3 size={25} /><span className="tiny-label">03 / AVAILABLE NOW</span><h2>Follow the evidence</h2><p>Run Sentinel, inspect each agent’s evidence, and review the final engineering disposition.</p></div>
     </div>
     <p className="demo-note">SIH demonstration system · Synthetic burn-in dataset · Not an official ISRO production system</p>
   </div>;

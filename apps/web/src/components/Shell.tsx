@@ -43,7 +43,7 @@ export function Shell() {
       <nav>
         <NavLink to="/overview"><LayoutDashboard size={18} />Overview</NavLink>
         <NavLink to="/dataset"><Database size={18} />Dataset<span className="nav-marker" /></NavLink>
-        <NavLink to="/analysis"><Activity size={18} />Analysis<span className="soon">NEXT</span></NavLink>
+        <NavLink to="/analysis"><Activity size={18} />Analysis<span className="nav-marker" /></NavLink>
       </nav>
       <div className="sidebar-bottom">
         <div className="mission-mark"><FlaskConical size={18} /><span>SIH demonstration<small>Semiconductor burn-in</small></span></div>

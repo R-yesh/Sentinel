@@ -53,8 +53,8 @@ describe('Dataset workspace', () => {
     expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
   });
 
-  it('fetches component detail and carries selection into analysis without executing it', async () => {
-    const fetchMock = mockApi();
+  it('fetches component detail and starts an investigation for the selected component', async () => {
+    const fetchMock = mockApi((url) => url.pathname.endsWith('/investigations') ? new Promise<Response>(() => {}) : undefined);
     const user = userEvent.setup();
     mount();
     await user.click(await screen.findByRole('button', { name: 'TEST001' }));
@@ -63,10 +63,8 @@ describe('Dataset workspace', () => {
     expect(within(preview).getByText('10.1000')).toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/components/TEST001'))).toBe(true);
     await user.click(screen.getByRole('link', { name: 'Analyze with Sentinel' }));
-    expect(await screen.findByRole('heading', { name: 'Component selection ready' })).toBeInTheDocument();
-    expect(screen.getByText('TEST001')).toBeInTheDocument();
-    expect(screen.getByText(/No investigation has been started/)).toBeInTheDocument();
-    expect(fetchMock.mock.calls.every(([url]) => !url.includes('/investigations'))).toBe(true);
+    expect(await screen.findByText('Sentinel is investigating TEST001')).toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter(([url]) => url.includes('/investigations'))).toHaveLength(1);
   });
 
   it('ignores a late detail response after a newer selection', async () => {

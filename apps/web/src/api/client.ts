@@ -1,3 +1,5 @@
+import { parseInvestigation, type InvestigationSelection } from './investigation';
+
 /** These types mirror the Phase 1 API's observed-data responses. */
 export interface ComponentObservation {
   component_id: string;
@@ -30,12 +32,14 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const timeout = AbortSignal.timeout(20_000);
+async function request<T>(path: string, signal?: AbortSignal, options: { body?: unknown; timeoutMs?: number } = {}): Promise<T> {
+  const timeout = AbortSignal.timeout(options.timeoutMs ?? 20_000);
   let response: Response;
   try {
     response = await fetch(`${baseUrl}${path}`, {
-      headers: { Accept: 'application/json' },
+      method: options.body === undefined ? 'GET' : 'POST',
+      headers: { Accept: 'application/json', ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     });
   } catch (error) {
@@ -66,4 +70,9 @@ export const sentinelApi = {
   component: (datasetId: string, componentId: string, signal?: AbortSignal) =>
     request<ComponentObservation>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/components/${encodeURIComponent(componentId)}`, signal),
   health: (signal?: AbortSignal) => request<HealthResponse>('/health', signal),
+  investigate: async (selection: InvestigationSelection) => {
+    // Three sequential structured LLM calls can outlast the browsing timeout.
+    const response = await request<unknown>('/api/v1/investigations', undefined, { body: selection, timeoutMs: 600_000 });
+    return parseInvestigation(response, selection);
+  },
 };

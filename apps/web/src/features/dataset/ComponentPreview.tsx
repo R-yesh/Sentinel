@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import { sentinelApi } from '../../api/client';
 import { useResource } from '../../hooks/useResource';
 import { ErrorState, formatLeakage, LoadingState } from '../../components/States';
+import { useInvestigationSession } from '../investigation/InvestigationSession';
 
 export function ComponentPreview({ datasetId, componentId, onClose }: {
   datasetId: string; componentId: string; onClose: () => void;
 }) {
   const load = useCallback((signal: AbortSignal) => sentinelApi.component(datasetId, componentId, signal), [datasetId, componentId]);
   const result = useResource(load);
+  const { start } = useInvestigationSession();
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (result.status === 'success' && window.matchMedia?.('(max-width: 1050px)').matches) {
@@ -29,9 +31,11 @@ export function ComponentPreview({ datasetId, componentId, onClose }: {
           <div className="measurement"><span className="time-marker" /><div><span className="measurement-label">0h <span>Initial observation</span></span><strong>{formatLeakage(result.data.leakage_0h)}<small>µA</small></strong></div></div>
           <div className="measurement"><span className="time-marker filled" /><div><span className="measurement-label">24h <span>Early burn-in</span></span><strong>{formatLeakage(result.data.leakage_24h)}<small>µA</small></strong></div></div>
         </div>
-        <div className="provenance"><Check size={15} /><p>Source observations<span>Retrieved from the selected dataset. No analytical assessment has been run.</span></p></div>
-        <Link className="button primary analyze-button" to={`/analysis?${analysisParams}`}>Analyze with Sentinel<ArrowRight size={16} /></Link>
-        <p className="action-note">Continue to the analysis workspace.<br />Execution will be available in a later phase.</p>
+        <div className="provenance"><Check size={15} /><p>Source observations<span>Retrieved from the selected dataset. Analytical findings appear in the investigation workspace.</span></p></div>
+        <Link className="button primary analyze-button" to={`/analysis?${analysisParams}`} onClick={(event) => {
+          if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) start({ dataset_id: datasetId, component_id: componentId }, result.data);
+        }}>Analyze with Sentinel<ArrowRight size={16} /></Link>
+        <p className="action-note">Run the Sentinel evidence pipeline.<br />Analysis may take a few minutes.</p>
       </div>
     </>}
   </aside>;

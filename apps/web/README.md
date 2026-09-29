@@ -1,8 +1,8 @@
 # Sentinel web workspace
 
-Phase 2 is a React + TypeScript frontend built with Vite. It provides a dataset
-workspace, component previews, overview/navigation, and an analysis placeholder.
-It does **not** execute investigations or generate analytical results.
+React + TypeScript with Vite. Phase 3 extends the existing dataset workspace
+with synchronous investigations, an inspectable seven-agent workflow, and an
+engineering reliability disposition. All analytical results come from Sentinel.
 
 ## Run locally
 
@@ -46,6 +46,7 @@ and become part of the browser bundle. Restart Vite after configuration changes.
 - `GET /api/v1/datasets/synthetic-burnin/components?search=...&page=...&page_size=...`
 - `GET /api/v1/datasets/synthetic-burnin/components/{component_id}`
 - `GET /health`
+- `POST /api/v1/investigations` with `{ "dataset_id": "synthetic-burnin", "component_id": "C0001" }`
 
 The single dataset ID is the one supported by Phase 1, not a fabricated display
 dataset. Search is submitted using Enter or the Search button and is executed by
@@ -56,27 +57,55 @@ not model readiness or LLM availability.
 
 Search, page size, page, and selected component are encoded in URL parameters.
 Selecting a row fetches its current observations from the detail endpoint.
-`Analyze with Sentinel` navigates to `/analysis?dataset=...&component=...` without
-calling the investigation API. The placeholder explicitly says execution has not
-started. Browser back/forward and direct selection links are supported.
+`Analyze with Sentinel` starts one POST and navigates to
+`/analysis?dataset=...&component=...`. The API constructs context and executes the
+unchanged orchestrator. Gemini credentials and the model artifact must already
+be configured on the server (see `../api/README.md`). No credentials reach the UI.
 
-Only identity, lot ID, observed 0h/24h leakage, and API counts are presented.
+Execution starts in an event handler, not a mount effect, preventing duplicate
+requests under React StrictMode. Direct analysis links and reloads require an
+explicit Run action. The current request/result remains in tab memory across
+route navigation, but is lost on reload. A new selection replaces that client
+session; late results from an older request cannot overwrite the new component.
+Leaving the page does not cancel backend execution. The client waits up to ten
+minutes; retry explicitly starts a new investigation, not a persisted job lookup.
+
+The loading screen shows one request state: the API has no per-agent progress.
+After a response, a labeled 1.8-second presentation replay highlights the workflow
+and findings accumulated in the shared state. Drift and Lot branch together and
+converge into Latent Defect. Results and inspection are immediately available;
+Skip/Replay controls and reduced-motion support avoid mandatory animation.
+
+Select any agent with returned evidence to inspect structured metrics, findings,
+severity, evidence, and metadata. Raw agent output and the full response remain
+collapsible for audit. The final decision comes only from `final_decision`;
+`needs_review` without a decision is an early stop, not a fabricated REVIEW.
+Invalid response identities/envelopes fail visibly; partial evidence produces
+completeness notes and unavailable values rather than inferred analysis.
+
+The dataset browser presents only identity, lot ID, observed 0h/24h leakage, and API counts.
 Leakage is formatted to four decimal places in µA; the backend retains source
 precision. Missing/non-finite display values appear as unavailable, not zero.
-No training labels, future observations, predictions, classifications, anomaly
-measures, or fabricated results are computed or bundled in the frontend.
+The investigation separates those observed inputs from returned forecasts,
+uncertainty, anomaly measures, provisional assessments, and final decisions.
+API non-finite statistics retain their meaning (∞/−∞/undefined), never zero.
+No training labels, future observations, or analytical calculations are bundled
+or reproduced in the frontend. Percentile fractions are formatted as percentages.
 
 ## Structure
 
 - `src/api/client.ts`: API types, request/error/timeout handling, endpoint methods.
+- `src/api/investigation.ts`: workflow types and response-boundary validation.
 - `src/hooks/useResource.ts`: abortable resource loading, retry, stale-response protection.
 - `src/components/`: application shell, API health, shared loading/error states.
 - `src/features/dataset/`: Dataset Workspace and component preview.
-- `src/pages/`: Overview and Analysis placeholder.
+- `src/features/investigation/`: session, workspace, observed context, workflow graph,
+  agent inspector, disposition, readable evidence primitives, and workspace styles.
+- `src/pages/`: Overview and route selection for Analysis.
 - `src/styles.css`: design tokens, semantic colors, responsive layout, reduced-motion support.
 - `src/test/`: focused interaction tests using API fixtures; no external services required.
 
-React Router provides route/state foundations for later investigation screens.
+React Router preserves the existing shell and dataset navigation.
 Fonts are bundled locally. The design uses native tables, accessible controls,
 keyboard selection, and a collapsible narrow-screen navigation. On narrower
 screens the detail panel moves below the table; the table scrolls horizontally.

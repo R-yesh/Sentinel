@@ -211,3 +211,4 @@
   .node-duration small { display: block; margin-top: 5px; }
   .workflow-disposition { width: 85%; }
 }
+.replay-paused .evidence-trace { animation-play-state: paused; }

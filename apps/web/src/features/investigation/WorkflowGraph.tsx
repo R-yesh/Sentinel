@@ -14,10 +14,16 @@ export function WorkflowGraph({ workflow, execution, running, selected, onSelect
   const completed = rows?.filter((r) => r.end !== null && r.end <= replay.cursor).map((r) => r.agent) ?? [];
   const active = rows?.filter((r) => r.start !== null && r.end !== null && r.start <= replay.cursor && replay.cursor < r.end).map((r) => r.agent) ?? [];
   const evidenceCount = workflow?.findings.filter((f) => replay.complete || completed.includes(f.agent as AgentId)).length ?? 0;
-  return <section className="panel workflow-panel" aria-labelledby="workflow-heading">
+  return <section className={`panel workflow-panel ${replay.playing ? '' : 'replay-paused'}`} aria-labelledby="workflow-heading">
     <div className="workflow-panel-header"><div><span className="eyebrow">SENTINEL / EXECUTION REPLAY</span><h2 id="workflow-heading">One component. Shared evidence.</h2></div><GitBranch size={22} strokeWidth={1.3} /></div>
     <div className="workflow-explainer"><span className="status-dot" /><p>{workflow ? 'Completed response · inspect any agent. Replay is retrospective, never live progress.' : running ? 'Request running · individual agent progress is not available.' : 'Pipeline topology · ready for an investigation.'}</p></div>
     {workflow && <ExecutionSummary execution={execution} />}
+    <div className="replay-controls"><span>{execution ? 'Execution replay · normalized visual time; labels show real duration' : 'Timing replay requires valid execution telemetry'}</span>{replay.timeline && <div className="replay-buttons">
+      <button className="text-button" onClick={replay.replay}><Play size={13} />Replay</button>
+      {!replay.complete && <button className="text-button" onClick={replay.toggle}>{replay.playing ? <Pause size={13} /> : <Play size={13} />}{replay.playing ? 'Pause' : 'Resume'}</button>}
+      <button className="text-button" onClick={replay.reset}><RotateCcw size={13} />Reset</button>
+      <button className="text-button" onClick={replay.skip}><SkipForward size={13} />Skip to result</button>
+    </div>}</div>
     <div className="workflow-canvas" aria-label="Agent workflow">
       <div className="workflow-source">OBSERVED 0h / 24h → WORKFLOW STATE</div>
       {STAGES.map((agents, index) => <div key={index} className={`flow-stage ${agents.length > 1 ? 'parallel-stage' : ''} ${agents.some((id) => active.includes(id)) ? 'replay-stage' : ''}`}>
@@ -42,12 +48,7 @@ export function WorkflowGraph({ workflow, execution, running, selected, onSelect
       <div className="flow-connector" aria-hidden="true"><ArrowDown size={13} /></div>
       <button className={`workflow-disposition disposition-${workflow?.final_decision?.toLowerCase() ?? 'none'}`} disabled={!workflow} onClick={onDisposition}><span className="tiny-label">RETURNED DISPOSITION{!replay.complete ? ' · REPLAY NOT FINISHED' : ''}</span><strong>{workflow?.final_decision ?? 'No decision issued'}</strong><span>Open engineering explanation</span></button>
     </div>
-    <div className={`state-packet ${active.length ? 'packet-replaying' : ''}`}><Database size={20} /><div><span className="tiny-label">SHARED WORKFLOW STATE / EVIDENCE</span><strong>{workflow ? `${evidenceCount} findings ${replay.complete ? 'returned' : 'from completed replay intervals'}` : 'Observed input → findings → disposition'}</strong><p>{active.length ? active.map((id) => AGENTS[id].name).join(' + ') : replay.complete ? 'Returned state available for inspection' : 'Replay paused or between agent intervals'}</p></div></div>
-    <div className="replay-controls"><span>{execution ? 'Execution replay · normalized visual time; labels show real duration' : 'Timing replay requires valid execution telemetry'}</span>{replay.timeline && <div className="replay-buttons">
-      <button className="text-button" onClick={replay.replay}><Play size={13} />Replay</button>
-      {!replay.complete && <button className="text-button" onClick={replay.toggle}>{replay.playing ? <Pause size={13} /> : <Play size={13} />}{replay.playing ? 'Pause' : 'Resume'}</button>}
-      <button className="text-button" onClick={replay.reset}><RotateCcw size={13} />Reset</button>
-      <button className="text-button" onClick={replay.skip}><SkipForward size={13} />Skip to result</button>
-    </div>}</div>
+    <div className={`state-packet ${active.length ? 'packet-replaying' : ''}`}><Database size={20} /><div><span className="tiny-label">SHARED WORKFLOW STATE / EVIDENCE</span><strong>{workflow ? `${evidenceCount} findings ${replay.complete ? 'returned' : 'from completed replay intervals'}` : 'Observed input → findings → disposition'}</strong><p>{!workflow ? 'Evidence appears after the investigation returns' : active.length ? active.map((id) => AGENTS[id].name).join(' + ') : replay.complete ? 'Returned state available for inspection' : 'Replay paused or between agent intervals'}</p></div></div>
+
   </section>;
 }

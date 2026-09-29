@@ -176,3 +176,28 @@ The production bundle is written to `dist/`. Preview uses port 4173 and the same
 local API proxy. For future static hosting, configure SPA fallback to `index.html`
 and same-origin proxy routes for `/api` and `/health`; Vite configuration itself
 does not install a production reverse proxy.
+
+## Final demo presentation (Phase 6)
+
+Overview is the early operational screen; Evaluation is the explicitly marked
+retrospective view. The Evaluation introduction distinguishes the configured
+absolute 24h rule, drift/robust-lot population screening, and the requested full
+seven-agent investigation. Comparison group cards open the corresponding
+synthetic-defective rows without starting investigations. The table groups early
+observations, early derived evidence, and synthetic hindsight separately.
+
+No conventional threshold is supplied by the synthetic generator. Its baseline,
+noise and class-dependent drift parameters do not define an acceptance limit.
+`SENTINEL_CONVENTIONAL_24H_LIMIT_UA` therefore remains an optional operator setting,
+with no new default or industry-standard claim. Configured comparison uses the
+existing strict `leakage_24h > limit` rule; an equal value is not flagged.
+
+Mild-drift coverage is explained as limited early separation under synthetic noise,
+not a tuned-away error or proof of real-world sensitivity. All displayed metrics
+come from the existing API. No screening, telemetry or analytical semantics change.
+
+Demo path: Overview → Why Sentinel? / Evaluation → inspect coverage/gaps or a
+configured comparison group → Investigate a selected component → retrospective
+replay → agent evidence → final disposition and Explanation. Replay controls are
+above the graph; page navigation restores workspace focus and position. A table
+can scroll horizontally on narrow screens without collapsing engineering fields.

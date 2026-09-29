@@ -29,6 +29,7 @@ export function OverviewPage() {
         ['Unassessed', data.summary.unassessed, 'Input or peer context issues'],
       ].map(([label, count, note]) => <div className="panel population-metric" key={label}><span>{label}</span><strong>{typeof count === 'number' ? count.toLocaleString() : count}</strong><small>{note}</small></div>)}</div>
       <p className="screening-boundary">Screening identifies candidates for investigation. It does not issue PASS, REVIEW, or REJECT. Signal counts overlap; candidate count is their union.</p>
+      <div className="population-evaluation-link"><span>How useful are these early signals? Inspect synthetic coverage and screening gaps.</span><Link to="/evaluation" className="button secondary">Why Sentinel? / Evaluation<ArrowRight size={15} /></Link></div>
       <div className="population-charts"><DriftDistribution data={data} /><LotDistribution lots={data.lots} selected={lot} onSelect={setLot} /></div>
       <ScreeningComparison data={data} />
       <ScreeningTable key={data.snapshot_id} data={data} lot={lot} setLot={setLot} />

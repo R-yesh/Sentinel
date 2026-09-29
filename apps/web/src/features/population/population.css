@@ -62,3 +62,8 @@
 @media (max-width: 1250px) { .population-metrics { grid-template-columns: repeat(3, 1fr); } .lot-bars { grid-template-columns: 1fr; max-height: 240px; overflow-y: auto; } }
 @media (max-width: 900px) { .population-charts { grid-template-columns: 1fr; } .lot-bars { grid-template-columns: 1fr 1fr; max-height: none; } }
 @media (max-width: 600px) { .population-metrics { grid-template-columns: repeat(2, 1fr); } .comparison-cells { grid-template-columns: repeat(2, 1fr); } .lot-bars { grid-template-columns: 1fr; } .screening-filters input, .screening-filters select { width: 100%; } .command-center .page-heading { flex-direction: column; align-items: start; } }
+
+.population-evaluation-link { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin: 0 0 22px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 4px; }
+.population-evaluation-link > span { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.population-evaluation-link .button { flex-shrink: 0; }
+@media (max-width: 720px) { .population-evaluation-link { align-items: flex-start; flex-direction: column; } }

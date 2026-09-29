@@ -20,10 +20,10 @@ const data: EvaluationResponse = {
   components: [component('HEALTHY', 'healthy', false), component('MISSED', 'mild_drift', false), component('FLAGGED', 'strong_drift', true)],
 };
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
-function api(fail = false) {
+function api(fail = false, evaluation = data) {
   const fetch = vi.fn((url: string, options?: RequestInit) => {
     if (url.endsWith('/investigations')) return new Promise<Response>(() => {});
-    if (url.endsWith('/evaluation')) return Promise.resolve(fail ? response({ detail: 'Evaluation labels unavailable.' }, 503) : response(data));
+    if (url.endsWith('/evaluation')) return Promise.resolve(fail ? response({ detail: 'Evaluation labels unavailable.' }, 503) : response(evaluation));
     if (url.endsWith('/population')) return Promise.resolve(response({ dataset_id: data.dataset_id, snapshot_id: 'early', method: 'phase4', early_drift_threshold_percent: 6, summary: { total: 3, lots: 1, screened: 3, unassessed: 0, candidates: 1, no_screening_signal: 2, significant_drift: 1, high_side_lot: 0 }, comparison: { status: 'unconfigured' }, components: data.components.map((r) => r.early), lots: [], drift_histogram: [] }));
     return Promise.resolve(response({ status: 'ok' }));
   });
@@ -40,6 +40,8 @@ it('shows evaluation-only hindsight and unflagged synthetic defects, without run
   expect(within(table).queryByRole('button', { name: 'Investigate FLAGGED' })).not.toBeInTheDocument();
   expect(within(table).getByText('987.6543')).toBeInTheDocument();
   expect(fetch.mock.calls.some(([url]) => url.endsWith('/investigations'))).toBe(false);
+  expect(screen.getByRole('region', { name: 'Three levels of reliability evidence' })).toHaveTextContent('No population-wide RF, Isolation Forest, or LLM execution');
+  expect(screen.getByText('Why mild drift is harder to flag early')).toBeInTheDocument();
 });
 
 it('sends only the Phase 3 selection and early observations when investigating from evaluation', async () => {
@@ -69,4 +71,22 @@ it('handles evaluation API errors and retries', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Evaluation labels unavailable.');
   api(); await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
   expect(await screen.findByRole('button', { name: 'Investigate MISSED' })).toBeInTheDocument();
+});
+
+it('opens Sentinel-only rows from the comparison without triggering an investigation', async () => {
+  const configured: EvaluationResponse = { ...data, comparison: { ...data.comparison, status: 'configured', limit_ua: 12, conventional_flagged: 0, sentinel_flagged: 1, both: 0, neither: 1, conventional_only: 0, sentinel_only: 1 }, components: data.components.map((r) => ({ ...r, early: { ...r.early, conventional_flag: false }, comparison_bucket: r.early.candidate ? 'sentinel_only' : 'neither' })) };
+  const fetch = api(false, configured); mount();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Inspect sentinel only synthetic defects' }));
+  const table = screen.getByRole('region', { name: 'Retrospective component review' });
+  expect(within(table).getByRole('heading', { name: 'Sentinel-only synthetic defects' })).toBeInTheDocument();
+  expect(within(table).getByRole('button', { name: 'Investigate FLAGGED' })).toBeInTheDocument();
+  expect(within(table).queryByRole('button', { name: 'Investigate MISSED' })).not.toBeInTheDocument();
+  expect(within(table).getByText('Not flagged')).toBeInTheDocument();
+  expect(within(table).getByText('10.00')).toBeInTheDocument();
+  expect(within(table).getByText('TYPICAL')).toBeInTheDocument();
+  expect(within(table).getByText('Evaluation-only / hindsight')).toBeInTheDocument();
+  expect(fetch.mock.calls.some(([url]) => url.endsWith('/investigations'))).toBe(false);
+  await user.click(screen.getByRole('button', { name: 'Inspect neither synthetic defects' }));
+  expect(within(screen.getByRole('region', { name: 'Retrospective component review' })).getByRole('button', { name: 'Investigate MISSED' })).toBeInTheDocument();
 });

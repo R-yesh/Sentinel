@@ -24,3 +24,27 @@
 .evaluation-table td:nth-child(6) { font: 10px var(--mono); }
 @media (max-width: 1150px) { .evaluation-charts { grid-template-columns: 1fr; } }
 @media (max-width: 650px) { .evaluation-page .page-heading { flex-direction: column; align-items: flex-start; } }
+
+/* Final demo presentation: distinguish comparison, screening and adjudication. */
+.screening-perspectives { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 22px; }
+.screening-perspectives > div { padding: 22px; border-right: 1px solid var(--border); }
+.screening-perspectives > div:last-child { border-right: 0; }
+.screening-perspectives h2 { font-size: 17px; font-weight: 500; margin-bottom: 12px; }
+.screening-perspectives p { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.screening-perspectives small { display: block; font-size: 10px; color: var(--dim); line-height: 1.8; margin-top: 12px; }
+.screening-perspectives .text-button { margin-top: 10px; }
+.coverage-limitation { margin: 0 22px 22px; padding: 14px 16px; border-left: 2px solid var(--review); background: #b9965010; font-size: 11px; line-height: 1.8; color: var(--muted); }
+.coverage-limitation strong { color: var(--text); font-weight: 500; }
+.coverage-limitation p { margin-top: 7px; }
+.comparison-actions > button { padding: 18px; text-align: left; background: #101c29; color: var(--text); border: 1px solid var(--border); border-radius: 4px; }
+.comparison-actions > button:hover:not(:disabled), .comparison-actions > button:focus-visible { border-color: var(--accent); background: #162a3b; }
+.comparison-actions > button > span, .comparison-actions > button > small { display: block; font-size: 11px; color: var(--muted); }
+.comparison-actions > button > strong { display: block; font: 25px var(--mono); margin: 10px 0; }
+.comparison-actions .comparison-inspect { color: var(--accent); margin-top: 12px; }
+.evaluation-review-anchor { scroll-margin-top: 24px; }
+.evaluation-table table { min-width: 1400px; }
+@media (max-width: 900px) {
+  .screening-perspectives { grid-template-columns: 1fr; }
+  .screening-perspectives > div { border-right: 0; border-bottom: 1px solid var(--border); }
+  .screening-perspectives > div:last-child { border-bottom: 0; }
+}

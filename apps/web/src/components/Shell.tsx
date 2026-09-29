@@ -28,7 +28,12 @@ function HealthIndicator() {
 export function Shell() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setOpen(false);
+    const workspace = document.getElementById('main');
+    workspace?.scrollIntoView?.({ block: 'start' });
+    workspace?.focus({ preventScroll: true });
+  }, [location.pathname]);
   const section = location.pathname.startsWith('/analysis') ? 'Analysis' : location.pathname === '/evaluation' ? 'Evaluation' : location.pathname === '/overview' ? 'Overview' : 'Dataset workspace';
   useEffect(() => { document.title = `${section} · Sentinel`; }, [section]);
   return <div className="app-shell">
@@ -57,7 +62,7 @@ export function Shell() {
         <div className="topbar-right"><span className="environment"><Radio size={13} />DEMO ENVIRONMENT</span><HealthIndicator /></div>
       </header>
       <main id="main" tabIndex={-1}><Outlet /></main>
-      <footer className="app-footer"><span>SENTINEL <span className="footer-divider">/</span> Semiconductor Reliability Intelligence</span><span>Observed evidence first <ArrowUpRight size={12} /></span></footer>
+      <footer className="app-footer"><span>SENTINEL <span className="footer-divider">/</span> Semiconductor Burn-In Reliability Intelligence</span><span>Observed evidence first <ArrowUpRight size={12} /></span></footer>
     </div>
   </div>;
 }

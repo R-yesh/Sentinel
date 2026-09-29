@@ -3,6 +3,7 @@ import math
 from uuid import uuid4
 
 from orchestrator.graph.orchestrator import SentinelOrchestrator
+from orchestrator.graph.execution import ExecutionRecorder
 from shared.context.lot_context import build_lot_context
 from shared.schemas.workflow import WorkflowState
 
@@ -44,5 +45,8 @@ def investigate(repository: DatasetRepository, dataset_id: str, component_id: st
         lot_context=lot_context,
     )
     # Called from a synchronous FastAPI route (thread pool), not its event loop.
-    result = asyncio.run(SentinelOrchestrator().run(state))
-    return {"dataset_id": dataset_id, "workflow": json_safe(result.model_dump())}
+    execution = ExecutionRecorder()
+    result = asyncio.run(SentinelOrchestrator().run(state, execution=execution))
+    telemetry = execution.snapshot()
+    return {"dataset_id": dataset_id, "workflow": json_safe(result.model_dump()),
+            "workflow_execution": telemetry.model_dump() if telemetry is not None else None}

@@ -176,3 +176,38 @@
   .workflow-status { font-size: 8px; }
   .replay-controls { align-items: flex-start; }
 }
+
+/* Execution telemetry is observational; replay uses a separate presentation clock. */
+.execution-summary { padding: 0 22px 18px; }
+.execution-summary dl { display: grid; grid-template-columns: 1fr .8fr 1.3fr; gap: 12px; margin: 0; }
+.execution-summary dt { color: var(--muted); font-size: 10px; }
+.execution-summary dd { margin: 8px 0 0; font: 13px var(--mono); }
+.execution-summary small { font: 10px var(--mono); color: var(--cyan); }
+.execution-summary p, .execution-unavailable { font-size: 10px; color: var(--muted); line-height: 1.7; margin-top: 12px; }
+.execution-unavailable { padding: 0 22px 18px; }
+.branch-timing { display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #38516b; padding-left: 12px; margin-top: 15px; font-size: 10px; color: var(--muted); }
+.branch-timing strong { color: var(--text); font-weight: 500; }
+.branch-timing p { margin: 0; }
+.workflow-source { text-align: center; font: 9px var(--mono); color: var(--muted); }
+.node-duration { display: block; font: 12px var(--mono); color: var(--cyan); margin-top: 8px; }
+.node-duration small { color: var(--dim); font: 8px var(--mono); }
+.workflow-disposition { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 72%; margin: auto; padding: 16px; border: 1px solid var(--disposition-color); background: #121f2e; border-radius: 4px; }
+.workflow-disposition strong { font: 22px var(--mono); color: var(--disposition-color); }
+.workflow-disposition > span:last-child { color: var(--muted); font-size: 10px; }
+.replay-controls { flex-wrap: wrap; }
+.replay-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.replay-stage .evidence-trace { position: absolute; width: 5px; height: 5px; background: var(--cyan); border-radius: 1px; left: calc(50% - 2px); animation: evidence-trace .9s ease-in-out infinite; }
+@keyframes evidence-trace { from { top: 0; opacity: .4; } to { top: 85%; opacity: 1; } }
+.inspector-execution { padding: 12px; background: #101b27; margin-top: 15px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.inspector-execution > span { display: block; color: var(--cyan); font: 12px var(--mono); margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .replay-stage .evidence-trace { animation: none; } }
+@media (max-width: 720px) {
+  .execution-summary dl { grid-template-columns: 1fr 1fr; }
+  .execution-summary dl > div:last-child { grid-column: 1 / -1; }
+  .parallel-stage .flow-nodes { gap: 10px; }
+  .parallel-stage .agent-node { padding: 10px; }
+  .parallel-stage .agent-node strong { font-size: 12px; }
+  .agent-node-top { flex-wrap: wrap; }
+  .node-duration small { display: block; margin-top: 5px; }
+  .workflow-disposition { width: 85%; }
+}

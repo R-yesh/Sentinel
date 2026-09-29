@@ -7,7 +7,6 @@ import { AgentInspector } from './AgentInspector';
 import { Disposition } from './Disposition';
 import { InputContext } from './InputContext';
 import { WorkflowGraph } from './WorkflowGraph';
-import { hasEvidence } from './presentation';
 
 export function InvestigationWorkspace({ selection }: { selection: InvestigationSelection }) {
   const { run: current, start } = useInvestigationSession();
@@ -29,11 +28,11 @@ export function InvestigationWorkspace({ selection }: { selection: Investigation
     </div>}
     {run?.status === 'success' && run.result.issues.length > 0 && <div className="response-notes" role="alert"><strong>Response completeness notes</strong><ul>{run.result.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}
     <div className="investigation-grid">
-      <WorkflowGraph key={workflow?.workflow_id ?? 'pending'} workflow={workflow} running={run?.status === 'running'} selected={view === 'agent' ? agent : null} onSelect={(id) => { setAgent(id); setView('agent'); if (window.matchMedia?.('(max-width: 1000px)').matches) details.current?.scrollIntoView({ block: 'start' }); }} />
+      <WorkflowGraph key={workflow?.workflow_id ?? 'pending'} workflow={workflow} execution={run?.status === 'success' ? run.result.workflow_execution : null} running={run?.status === 'running'} selected={view === 'agent' ? agent : null} onDisposition={() => { setView('disposition'); details.current?.scrollIntoView({ block: 'start' }); }} onSelect={(id) => { setAgent(id); setView('agent'); if (window.matchMedia?.('(max-width: 1000px)').matches) details.current?.scrollIntoView({ block: 'start' }); }} />
       <div ref={details} className="investigation-detail-column">
         {workflow ? <>
-          <div className="result-view-switch" role="group" aria-label="Evidence view"><button aria-pressed={view === 'disposition'} onClick={() => setView('disposition')}>Final disposition</button><button aria-pressed={view === 'agent'} disabled={!hasEvidence(workflow, agent)} onClick={() => setView('agent')}>Agent evidence</button></div>
-          {view === 'agent' && hasEvidence(workflow, agent) ? <AgentInspector workflow={workflow} agent={agent} /> : <Disposition workflow={workflow} />}
+          <div className="result-view-switch" role="group" aria-label="Evidence view"><button aria-pressed={view === 'disposition'} onClick={() => setView('disposition')}>Final disposition</button><button aria-pressed={view === 'agent'} onClick={() => setView('agent')}>Agent evidence</button></div>
+          {view === 'agent' ? <AgentInspector workflow={workflow} agent={agent} execution={run?.status === 'success' ? run.result.workflow_execution?.agents.find((row) => row.agent === agent) : undefined} /> : <Disposition workflow={workflow} />}
         </> : <section className="panel pending-evidence"><SearchCheck size={35} strokeWidth={1.2} /><span className="eyebrow">EVIDENCE BEFORE CONCLUSIONS</span><h2>{run?.status === 'error' ? 'No result available' : 'Awaiting the investigation'}</h2><p>The reliability decision, engineering explanation, and agent findings will appear here when the API returns.</p><div><span>Observed measurements</span><ArrowRight size={14} /><span>Analytical evidence</span><ArrowRight size={14} /><span>Disposition</span></div></section>}
       </div>
     </div>

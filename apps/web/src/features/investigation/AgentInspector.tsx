@@ -1,9 +1,10 @@
 import { Crosshair } from 'lucide-react';
+import { duration, type AgentExecution } from '../../api/execution';
 import { isRecord, text, type AgentId, type WorkflowState } from '../../api/investigation';
 import { AGENTS, humanize, measurement, METRICS } from './presentation';
 import { EvidenceList, FieldValue, Narrative } from './Evidence';
 
-export function AgentInspector({ workflow, agent }: { workflow: WorkflowState; agent: AgentId }) {
+export function AgentInspector({ workflow, agent, execution }: { workflow: WorkflowState; agent: AgentId; execution?: AgentExecution }) {
   const output = workflow.agent_outputs[agent] ?? {};
   const findings = workflow.findings.filter((finding) => finding.agent === agent);
   const metrics = METRICS[agent] ?? [];
@@ -20,6 +21,7 @@ export function AgentInspector({ workflow, agent }: { workflow: WorkflowState; a
     <div className="inspector-body">
       <span className="eyebrow">{AGENTS[agent].kind}</span><h2>{AGENTS[agent].name}</h2>
       <p className="inspector-description">{AGENTS[agent].description}</p>
+      <div className="inspector-execution"><strong>Execution: {execution?.status.replaceAll('_', ' ') ?? 'timing unavailable'}</strong><span>{duration(execution?.duration_ms)}</span>{execution?.started_at && <details><summary>Execution timestamps · UTC</summary><p>Started: {execution.started_at}<br />Finished: {execution.completed_at}</p><p>Workflow offsets: {duration(execution.start_offset_ms)} → {duration(execution.end_offset_ms)}</p></details>}</div>
       {metrics.length > 0 && <dl className="agent-metrics">{metrics.map((metric) => {
         let value = output[metric.key];
         if (metric.percentile && typeof value === 'number') value *= 100;

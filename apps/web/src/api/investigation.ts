@@ -1,3 +1,5 @@
+import { parseExecution, type WorkflowExecution } from './execution';
+
 export const AGENT_IDS = ['data_forensics', 'drift_intelligence', 'lot_intelligence', 'latent_defect', 'adversarial_qa', 'reliability_judge', 'explanation'] as const;
 export type AgentId = typeof AGENT_IDS[number];
 export type Decision = 'PASS' | 'REVIEW' | 'REJECT';
@@ -27,6 +29,7 @@ export interface WorkflowState {
 }
 export interface InvestigationResult {
   dataset_id: string;
+  workflow_execution?: WorkflowExecution | null;
   workflow: WorkflowState;
   /** Transport completeness notes, never analytical findings. */
   issues: string[];
@@ -79,7 +82,10 @@ export function parseInvestigation(value: unknown, selection: InvestigationSelec
   if (w.status === 'completed' && !decision) issues.push('The workflow is marked completed but contains no recognized final decision.');
   if (outputs.reliability_judge?.decision && outputs.reliability_judge.decision !== decision) issues.push('Judge output and final_decision differ. The disposition below preserves final_decision.');
   const rawData = objectField('raw_data');
+  const execution = parseExecution(value.workflow_execution);
+  if (value.workflow_execution != null && !execution) issues.push('Execution telemetry was malformed; timing replay is unavailable. Analytical evidence is preserved.');
   return {
+    workflow_execution: execution,
     dataset_id: selection.dataset_id, raw: value, issues: [...new Set(issues)],
     workflow: {
       workflow_id: w.workflow_id as string, component_id: selection.component_id,

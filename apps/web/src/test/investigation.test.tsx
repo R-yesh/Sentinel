@@ -6,13 +6,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
 import { parseInvestigation, type Decision } from '../api/investigation';
 import { Disposition } from '../features/investigation/Disposition';
+import { executionFixture } from './executionFixture';
 
 const selection = { dataset_id: 'synthetic-burnin', component_id: 'TEST001' };
 const observed = { component_id: 'TEST001', lot_id: 'LOT-TEST', leakage_0h: 10, leakage_24h: 10.2 };
 const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 // Test-only examples matching the API envelope. No fixture is imported by application code.
 function result(decision: Decision = 'PASS', component = 'TEST001') {
-  return { dataset_id: selection.dataset_id, workflow: {
+  return { dataset_id: selection.dataset_id, workflow_execution: executionFixture(), workflow: {
     workflow_id: `workflow-${component}`, component_id: component, lot_id: 'LOT-TEST',
     status: decision === 'REVIEW' ? 'needs_review' : 'completed', raw_data: observed, lot_context: null,
     final_decision: decision, explanation: 'Engineering reasoning returned by Sentinel.',
@@ -60,8 +61,8 @@ describe('Investigation workspace', () => {
     await act(async () => { finish(response(result())); });
     expect(within(await screen.findByRole('region', { name: 'Reliability disposition' })).getByRole('heading', { name: 'PASS' })).toBeInTheDocument();
     expect(screen.getByText('INDEPENDENT ANALYSES · SEPARATE STATE COPIES')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Skip replay' }));
-    expect(screen.getByText('Replay shows returned evidence, not live progress')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Skip to result' }));
+    expect(screen.getByText('Execution replay · normalized visual time; labels show real duration')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Inspect Drift Intelligence' }));
     expect(within(screen.getByRole('region', { name: 'Agent details' })).getByText('11.4000')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Inspect Lot Intelligence' }));
@@ -109,7 +110,7 @@ describe('Investigation workspace', () => {
     expect(within(disposition).getByRole('heading', { name: 'No decision issued' })).toBeInTheDocument();
     expect(within(disposition).getByText(/not a judge-issued REVIEW/)).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('raw_data was missing or malformed');
-    expect(screen.getByRole('button', { name: 'Inspect Drift Intelligence' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Inspect Drift Intelligence' })).toHaveTextContent('Execution unknown');
     await user.click(screen.getByRole('button', { name: 'Inspect Data Forensics' }));
     expect(screen.getByText('leakage_0h')).toBeInTheDocument();
   });

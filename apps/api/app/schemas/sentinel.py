@@ -1,6 +1,7 @@
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+from shared.schemas.execution import WorkflowExecution
 
 
 class ComponentObservation(BaseModel):
@@ -27,6 +28,7 @@ class InvestigationRequest(BaseModel):
 
 class InvestigationResponse(BaseModel):
     dataset_id: str
+    workflow_execution: WorkflowExecution | None = None
     workflow: dict[str, Any] = Field(
         description=(
             "Serialized WorkflowState. Non-finite numbers are represented by "

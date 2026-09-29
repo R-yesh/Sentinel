@@ -1,4 +1,5 @@
 import asyncio
+from orchestrator.graph.execution import ExecutionRecorder
 
 from agents.data_forensics.agent import DataForensicsAgent
 from agents.drift_intelligence.agent import DriftIntelligenceAgent
@@ -21,11 +22,19 @@ class SentinelOrchestrator:
         self.reliability_judge = ReliabilityJudgeAgent()
         self.explanation = ExplanationAgent()
 
-    async def run(self, state: WorkflowState) -> WorkflowState:
+    async def run(self, state: WorkflowState, *, execution: ExecutionRecorder | None = None) -> WorkflowState:
+        execution = execution if execution is not None else ExecutionRecorder()
+        execution.begin()
+        try:
+            return await self._run(state, execution)
+        finally:
+            execution.finish()
+
+    async def _run(self, state: WorkflowState, execution: ExecutionRecorder) -> WorkflowState:
         state.status = WorkflowStatus.RUNNING
 
         # Step 1: Validate the incoming data first.
-        state = await self.data_forensics.run(state)
+        state = await execution.execute('data_forensics', self.data_forensics, state)
 
         data_quality = state.agent_outputs.get(
             "data_forensics",
@@ -45,8 +54,8 @@ class SentinelOrchestrator:
 
         # Step 2: Run independent analyses concurrently.
         lot_result, drift_result = await asyncio.gather(
-            self.lot_intelligence.run(lot_state),
-            self.drift_intelligence.run(drift_state),
+            execution.execute('lot_intelligence', self.lot_intelligence, lot_state),
+            execution.execute('drift_intelligence', self.drift_intelligence, drift_state),
         )
 
         # Step 3: Merge only the findings created by each branch.
@@ -65,9 +74,9 @@ class SentinelOrchestrator:
             drift_result.agent_outputs["drift_intelligence"]
         )
 
-        state = await self.latent_defect.run(state)
-        state = await self.adversarial_qa.run(state)
-        state = await self.reliability_judge.run(state)
-        state = await self.explanation.run(state)
+        state = await execution.execute('latent_defect', self.latent_defect, state)
+        state = await execution.execute('adversarial_qa', self.adversarial_qa, state)
+        state = await execution.execute('reliability_judge', self.reliability_judge, state)
+        state = await execution.execute('explanation', self.explanation, state)
 
         return state

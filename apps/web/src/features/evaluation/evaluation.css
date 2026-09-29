@@ -1,0 +1,50 @@
+.evaluation-banner { border: 1px solid #5e4d32; border-left: 3px solid var(--review); background: #201e1b; padding: 20px 24px; margin: 22px 0; }
+.evaluation-banner strong { color: var(--review); font: 11px var(--mono); letter-spacing: 1px; }
+.evaluation-banner p { font-size: 13px; line-height: 1.8; margin: 12px 0; max-width: 880px; }
+.evaluation-banner > span { font-size: 10px; color: var(--muted); }
+.evaluation-page .population-metric { border-top-color: #6a5637; }
+.evaluation-page .population-metric:nth-child(2) strong { color: var(--text); }
+.evaluation-charts { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 20px; margin: 24px 0; }
+.evaluation-coverage { overflow-x: auto; padding: 0 22px; }
+.evaluation-coverage table { border-collapse: collapse; width: 100%; min-width: 520px; }
+.evaluation-coverage th { font-size: 10px; color: var(--muted); font-weight: 400; text-align: left; }
+.evaluation-coverage td { font: 11px var(--mono); }
+.evaluation-coverage td, .evaluation-coverage th { border-bottom: 1px solid var(--border); padding: 13px 8px; }
+.evaluation-coverage th[scope=row] { color: var(--review); font: 11px var(--mono); min-width: 130px; }
+.coverage-track { display: block; background: #263345; height: 5px; margin-top: 12px; width: 100%; }
+.coverage-track > span { display: block; height: 100%; background: var(--cyan); }
+.overlap-list { padding: 0 22px; }
+.overlap-list > div { display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); padding: 16px 0; }
+.overlap-list span { font-size: 12px; color: var(--muted); margin-right: auto; }
+.overlap-list strong { font: 20px var(--mono); color: var(--cyan); }
+.overlap-list small { font: 10px var(--mono); color: var(--dim); min-width: 48px; text-align: right; }
+.evaluation-table table { min-width: 1100px; }
+.evaluation-table .evaluation-column-groups th { border-bottom: 1px solid #53462f; color: var(--review); background: #201f1d; padding: 10px 14px; }
+.evaluation-table .hindsight-cell { background: #211f1b; color: #d6c5a5; }
+.evaluation-table td:nth-child(6) { font: 10px var(--mono); }
+@media (max-width: 1150px) { .evaluation-charts { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .evaluation-page .page-heading { flex-direction: column; align-items: flex-start; } }
+
+/* Final demo presentation: distinguish comparison, screening and adjudication. */
+.screening-perspectives { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 22px; }
+.screening-perspectives > div { padding: 22px; border-right: 1px solid var(--border); }
+.screening-perspectives > div:last-child { border-right: 0; }
+.screening-perspectives h2 { font-size: 17px; font-weight: 500; margin-bottom: 12px; }
+.screening-perspectives p { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.screening-perspectives small { display: block; font-size: 10px; color: var(--dim); line-height: 1.8; margin-top: 12px; }
+.screening-perspectives .text-button { margin-top: 10px; }
+.coverage-limitation { margin: 0 22px 22px; padding: 14px 16px; border-left: 2px solid var(--review); background: #b9965010; font-size: 11px; line-height: 1.8; color: var(--muted); }
+.coverage-limitation strong { color: var(--text); font-weight: 500; }
+.coverage-limitation p { margin-top: 7px; }
+.comparison-actions > button { padding: 18px; text-align: left; background: #101c29; color: var(--text); border: 1px solid var(--border); border-radius: 4px; }
+.comparison-actions > button:hover:not(:disabled), .comparison-actions > button:focus-visible { border-color: var(--accent); background: #162a3b; }
+.comparison-actions > button > span, .comparison-actions > button > small { display: block; font-size: 11px; color: var(--muted); }
+.comparison-actions > button > strong { display: block; font: 25px var(--mono); margin: 10px 0; }
+.comparison-actions .comparison-inspect { color: var(--accent); margin-top: 12px; }
+.evaluation-review-anchor { scroll-margin-top: 24px; }
+.evaluation-table table { min-width: 1400px; }
+@media (max-width: 900px) {
+  .screening-perspectives { grid-template-columns: 1fr; }
+  .screening-perspectives > div { border-right: 0; border-bottom: 1px solid var(--border); }
+  .screening-perspectives > div:last-child { border-bottom: 0; }
+}

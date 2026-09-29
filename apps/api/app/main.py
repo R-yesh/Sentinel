@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
-from app.api.routes.health import router as health_router
-from app.core.config import settings
+from .api.routes.health import router as health_router
+from .api.routes.sentinel import router as sentinel_router
+from .core.config import settings
 
 
 app = FastAPI(
@@ -10,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(sentinel_router)
 
 
 @app.get("/")

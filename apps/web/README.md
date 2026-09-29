@@ -1,8 +1,9 @@
 # Sentinel web workspace
 
-React + TypeScript with Vite. Phase 3 extends the existing dataset workspace
-with synchronous investigations, an inspectable seven-agent workflow, and an
-engineering reliability disposition. All analytical results come from Sentinel.
+React + TypeScript with Vite. Phase 4 adds a population command center alongside
+the dataset workspace and Phase 3's synchronous investigations, inspectable
+seven-agent workflow, and engineering reliability disposition. All analytical
+results come from Sentinel.
 
 ## Run locally
 
@@ -22,11 +23,39 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
-Open http://127.0.0.1:5173. The default route is `/dataset`. Browsing does not
+Open http://127.0.0.1:5173. The default route is `/overview`. Browsing does not
 make Gemini calls or run the ML model. The Python environment still needs the
 existing API dependencies installed to import the backend.
 
-## Configuration
+## Population command center (Phase 4)
+
+Overview now consumes `GET /api/v1/datasets/synthetic-burnin/population` through
+the existing API client. It displays population/lot counts, screening candidates,
+significant early drift, high-side lot evidence, no-signal and unassessed counts.
+No final PASS/REVIEW/REJECT counts are manufactured.
+
+The server defines a candidate as significant early drift OR high-side
+non-TYPICAL lot evidence, using existing Sentinel utilities and thresholds.
+The UI only formats values and filters the complete returned population. Its
+15-row table pagination is over that complete response, not a partial dataset
+page. Sorting by number of reasons is evidence triage, not a risk score.
+
+Charts show the backend's percentage-change histogram and each lot's
+candidate/total count. Hover or keyboard-focus histogram bars for exact ranges;
+select a lot bar to filter the component table. Conventional overlap is shown
+only when the optional server reference is configured (see `../api/README.md`).
+No numerical conventional default or threshold-editing UI is included.
+
+`Investigate` calls the existing Phase 3 session action and navigates directly
+to the existing Analysis workspace. Dashboard loading does not execute agents,
+fit models, or call Gemini. IF/RF context remains available in investigations.
+Synthetic training labels and future measurements never enter the dashboard.
+
+Added modules: `src/api/population.ts` and `src/features/population/` (charts,
+comparison, component table, styling). Overview reuses the existing shell,
+resource/error handling, request layer, and investigation session.
+
+## API configuration
 
 Defaults work without an environment file. Copy `.env.example` to `.env.local`
 only if overriding them:

@@ -7,7 +7,7 @@ import { InvestigationSession } from './features/investigation/InvestigationSess
 
 export function App() {
   return <InvestigationSession><Routes><Route element={<Shell />}>
-    <Route index element={<Navigate to="/dataset" replace />} />
+    <Route index element={<Navigate to="/overview" replace />} />
     <Route path="dataset" element={<DatasetPage />} />
     <Route path="overview" element={<OverviewPage />} />
     <Route path="analysis" element={<AnalysisPage />} />

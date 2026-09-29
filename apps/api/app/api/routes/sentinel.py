@@ -10,11 +10,23 @@ from ...services.datasets import (
     DatasetRepository, DatasetUnavailable, SelectionNotFound, get_dataset_repository,
 )
 from ...services.investigations import InvalidLotContext, investigate
+from ...schemas.population import PopulationResponse
+from ...services.population import population
 
 
 router = APIRouter(prefix="/api/v1", tags=["Sentinel"])
 logger = logging.getLogger(__name__)
 Repository = Annotated[DatasetRepository, Depends(get_dataset_repository)]
+
+
+@router.get('/datasets/{dataset_id}/population', response_model=PopulationResponse)
+def get_population(dataset_id: str, repository: Repository):
+    try:
+        return population(repository, dataset_id)
+    except SelectionNotFound as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except DatasetUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
 
 
 @router.get("/datasets/{dataset_id}/components", response_model=ComponentPage)

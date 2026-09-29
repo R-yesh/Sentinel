@@ -29,7 +29,7 @@ export function Shell() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [location.pathname]);
-  const section = location.pathname.startsWith('/analysis') ? 'Analysis' : location.pathname === '/overview' ? 'Overview' : 'Dataset workspace';
+  const section = location.pathname.startsWith('/analysis') ? 'Analysis' : location.pathname === '/evaluation' ? 'Evaluation' : location.pathname === '/overview' ? 'Overview' : 'Dataset workspace';
   useEffect(() => { document.title = `${section} · Sentinel`; }, [section]);
   return <div className="app-shell">
     <a className="skip-link" href="#main">Skip to workspace</a>
@@ -44,6 +44,7 @@ export function Shell() {
         <NavLink to="/overview"><LayoutDashboard size={18} />Overview</NavLink>
         <NavLink to="/dataset"><Database size={18} />Dataset<span className="nav-marker" /></NavLink>
         <NavLink to="/analysis"><Activity size={18} />Analysis<span className="nav-marker" /></NavLink>
+        <NavLink to="/evaluation"><FlaskConical size={18} />Evaluation</NavLink>
       </nav>
       <div className="sidebar-bottom">
         <div className="mission-mark"><FlaskConical size={18} /><span>SIH demonstration<small>Semiconductor burn-in</small></span></div>

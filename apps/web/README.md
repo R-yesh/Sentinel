@@ -55,7 +55,31 @@ Added modules: `src/api/population.ts` and `src/features/population/` (charts,
 comparison, component table, styling). Overview reuses the existing shell,
 resource/error handling, request layer, and investigation session.
 
-## API configuration
+## Evaluation / Why Sentinel? (Phase 4.5)
+
+`/evaluation` is a separate navigation destination. It consumes only the
+dedicated `/api/v1/datasets/synthetic-burnin/evaluation` endpoint. An evaluation
+banner and tinted hindsight columns distinguish synthetic `defect_type` and
+future 96h/168h observations from the early operational inputs. Overview remains
+unchanged and stays the default route.
+
+The page includes coverage counts/rates, class-level flag-rate bars, four signal
+overlap buckets, optional configured conventional comparison, and a searchable,
+paginated retrospective table defaulting to unflagged synthetic defects.
+Comparison-group and class filters reveal misses as well as successes. Unknown
+labels/incomplete screening remain explicitly excluded; missing future values
+are unavailable. No generic accuracy or real-world performance claim is made.
+
+Investigate invokes the existing Phase 3 session with an explicit early-input
+allowlist and sends only dataset/component IDs to the investigation API. No
+hindsight is passed into investigation state. No Gemini calls occur on evaluation
+page loading. Conventional configuration remains server-side and unset by default.
+
+Modules: `api/evaluation.ts`, `pages/EvaluationPage.tsx`, and
+`features/evaluation/` (coverage, comparison, table, styles). Focused frontend
+tests verify the boundary and Overview/Analysis navigation.
+
+## API connection configuration
 
 Defaults work without an environment file. Copy `.env.example` to `.env.local`
 only if overriding them:

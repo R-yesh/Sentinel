@@ -3,6 +3,7 @@ import { Shell } from './components/Shell';
 import { DatasetPage } from './features/dataset/DatasetPage';
 import { AnalysisPage } from './pages/AnalysisPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { EvaluationPage } from './pages/EvaluationPage';
 import { InvestigationSession } from './features/investigation/InvestigationSession';
 
 export function App() {
@@ -10,6 +11,7 @@ export function App() {
     <Route index element={<Navigate to="/overview" replace />} />
     <Route path="dataset" element={<DatasetPage />} />
     <Route path="overview" element={<OverviewPage />} />
+    <Route path="evaluation" element={<EvaluationPage />} />
     <Route path="analysis" element={<AnalysisPage />} />
     <Route path="*" element={<Navigate to="/dataset" replace />} />
   </Route></Routes></InvestigationSession>;

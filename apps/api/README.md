@@ -77,7 +77,43 @@ Focused validation:
 apps/api/.venv/Scripts/python.exe -m pytest tests/test_population.py -q -p no:cacheprovider
 ```
 
-## Investigation execution
+## Synthetic retrospective evaluation (Phase 4.5)
+
+`GET /api/v1/datasets/synthetic-burnin/evaluation` is a dedicated hindsight
+endpoint. The operational population/component endpoints still exclude labels
+and future observations. It returns `evaluation_only: true`, a content snapshot,
+the Phase 4 method identifier, summary coverage, `by_defect_type`, mutually
+exclusive `signal_overlap`, defective-only conventional comparison, and rows
+with separate `early` and `hindsight` objects.
+
+One CSV snapshot supplies both sides. The unchanged Phase 4 `population()`
+service receives only its early observation allowlist through a snapshot
+repository; no screening rules are reimplemented here. Labels and 96h/168h
+observations are joined afterward. A bounded content-keyed cache includes both
+hindsight and early results, so label/future/configuration changes invalidate
+evaluation without changing early flags. No model inference or LLM runs.
+
+Ground truth follows the generator: `healthy` is healthy; `mild_drift`,
+`strong_drift`, and `latent_defect` are synthetic defective classes. Unknown or
+missing labels are excluded from coverage, as are incomplete early screens.
+Each class reports total, evaluated, excluded, flagged, not flagged, and
+`flag_rate` (percentage of evaluated rows). Zero denominators return null.
+Absent/invalid future measurements return null without affecting label-based
+coverage. No future threshold defines ground truth. A missing label column
+returns 503; unknown datasets return 404.
+
+Signal buckets (drift only, lot only, both, neither) partition evaluated rows.
+Conventional comparison uses Phase 4's configured strict 24h rule and partitions
+evaluated synthetic defective rows; absent configuration leaves all comparison
+counts null. No conventional limit is invented. Per-row comparison buckets
+allow inspection of each group. These statistics describe the current synthetic
+dataset, not independently held-out or real-world validated performance.
+
+```powershell
+apps/api/.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_population.py -q -p no:cacheprovider
+```
+
+## Investigation execution contract
 
 `POST /api/v1/investigations` with:
 

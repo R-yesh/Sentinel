@@ -12,11 +12,23 @@ from ...services.datasets import (
 from ...services.investigations import InvalidLotContext, investigate
 from ...schemas.population import PopulationResponse
 from ...services.population import population
+from ...schemas.evaluation import EvaluationResponse
+from ...services.evaluation import evaluation
 
 
 router = APIRouter(prefix="/api/v1", tags=["Sentinel"])
 logger = logging.getLogger(__name__)
 Repository = Annotated[DatasetRepository, Depends(get_dataset_repository)]
+
+
+@router.get('/datasets/{dataset_id}/evaluation', response_model=EvaluationResponse)
+def get_evaluation(dataset_id: str, repository: Repository):
+    try:
+        return evaluation(repository, dataset_id)
+    except SelectionNotFound as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except DatasetUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
 
 
 @router.get('/datasets/{dataset_id}/population', response_model=PopulationResponse)

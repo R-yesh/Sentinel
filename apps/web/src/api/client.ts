@@ -1,5 +1,6 @@
 import { parseInvestigation, type InvestigationSelection } from './investigation';
 import type { PopulationResponse } from './population';
+import type { EvaluationResponse } from './evaluation';
 
 /** These types mirror the Phase 1 API's observed-data responses. */
 export interface ComponentObservation {
@@ -64,6 +65,8 @@ async function request<T>(path: string, signal?: AbortSignal, options: { body?: 
 }
 
 export const sentinelApi = {
+  evaluation: (datasetId: string, signal?: AbortSignal) =>
+    request<EvaluationResponse>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/evaluation`, signal),
   population: (datasetId: string, signal?: AbortSignal) =>
     request<PopulationResponse>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/population`, signal),
   components: (datasetId: string, search: string, page: number, pageSize: number, signal?: AbortSignal) => {
